@@ -1,18 +1,21 @@
 abstract type SamplingStrategy{T} end
 
+abstract type NumericalSamplingStrategy <: SamplingStrategy{Number} end
+
 types(ss::SamplingStrategy) = ss.types
 
-function ensuretypesupport(ss::SamplingStrategy{T}) where T
-    @assert length(types(ss)) > 0 "For sampling, a number of argument types has to be defined."
-    @assert .&(.<:(types(ss), T)...) "All entered types must be supported by the sampler."
-    return ss
+function ensuretypesupport(types::Tuple{Vararg{DataType}}, T::DataType, cts::Bool)
+    @assert length(types) > 0 "For sampling, a number of argument types has to be defined."
+    @assert .&(.<:(types, T)...) "All entered types (here $(types)) must be supported by the sampler."
+
+    return cts ? concretetypes(types) : map(t -> Set([t]), types)
 end
 
-struct UniformSampling <: SamplingStrategy{Number}
-    types::Tuple{Vararg{DataType}}
+struct UniformSampling <: NumericalSamplingStrategy
+    types::Tuple{Vararg{Set{DataType}}}
 
-    UniformSampling(types) = ensuretypesupport(new(types))
+    UniformSampling(types, cts=false) = new(ensuretypesupport(types, Number, cts))
 end
 
-nextinput(rs::UniformSampling) = rand.(types(rs))
-nextinput(rs::UniformSampling, dim::Int64) = rand(types(rs)[dim])
+nextinput(rs::UniformSampling) = rand.(rand.(types(rs)))
+nextinput(rs::UniformSampling, dim::Int64) = rand(rand(types(rs)[dim]))

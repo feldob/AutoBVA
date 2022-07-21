@@ -1,19 +1,24 @@
 module AutoBVA
 
-    using Distances
+    using Distances, # distances.jl: common metric abstractions
+        InteractiveUtils # cts.jl: subtypes and meta stuff
 
-    # distances.jl
-    export Strlendist, ProgramDerivative, evaluate,
-
-    # sut.jl
-    SUT, name, argtypes, call,
-    myidentity_sut, tuple_sut, # example suts
+    # cts.jl
+    export compatibletypes, concretetypes, cts_supportedtypes,
 
     # sampling.jl
-    SamplingStrategy, UniformSampling, nextinput
+        SamplingStrategy, UniformSampling, nextinput,
 
+    # distances.jl
+        Strlendist, ProgramDerivative, evaluate,
+
+    # sut.jl
+        SUT, name, argtypes, call,
+        myidentity_sut, tuple_sut # example suts
+
+    include("cts.jl")
+    include("sampling.jl")
     include("distances.jl")
     include("sut.jl")
-    include("sampling.jl")
 
 end # module
