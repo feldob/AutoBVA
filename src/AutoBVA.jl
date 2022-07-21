@@ -7,7 +7,7 @@ module AutoBVA
     export compatibletypes, concretetypes, cts_supportedtypes,
 
     # sampling.jl
-        SamplingStrategy, UniformSampling, nextinput,
+        SamplingStrategy, UniformSampling, BituniformSampling, nextinput,
 
     # distances.jl
         Strlendist, ProgramDerivative, evaluate,

@@ -19,3 +19,23 @@ end
 
 nextinput(rs::UniformSampling) = rand.(rand.(types(rs)))
 nextinput(rs::UniformSampling, dim::Int64) = rand(rand(types(rs)[dim]))
+
+struct BituniformSampling <: NumericalSamplingStrategy
+    types::Tuple{Vararg{Set{DataType}}}
+
+    BituniformSampling(types, cts=false) = new(ensuretypesupport(types, Number, cts))
+end
+
+maxbits(::Type{T}) where T <: Unsigned = sizeof(T) * 8
+maxbits(::Type{T}) where T <: Signed = sizeof(T) * 8 - 1
+
+bitlogsample(t::Type{<:Integer}) = rand(t) >> rand(0:maxbits(t))
+bitlogsample(::Type{Bool}) = rand(Bool)
+function bitlogsample(::Type{BigInt}, maxbits = 540)
+    maxbig = big"2"^rand(1:maxbits)
+    rand((-maxbig):maxbig)
+end
+
+nextinput(rs::BituniformSampling) = tuple(map(i -> nextinput(rs, i), eachindex(rs.types))...)
+nextinput(rs::BituniformSampling, dim::Integer) = bitlogsample(rand(types(rs)[dim]))
+nextinput(::BituniformSampling, type::DataType) = bitlogsample(type)
