@@ -7,9 +7,13 @@ module AutoBVA
 
     # sut.jl
     SUT, name, argtypes, call,
-    myidentity_sut, tuple_sut # example suts
+    myidentity_sut, tuple_sut, # example suts
+
+    # sampling.jl
+    SamplingStrategy, UniformSampling, nextinput
 
     include("distances.jl")
     include("sut.jl")
+    include("sampling.jl")
 
 end # module
