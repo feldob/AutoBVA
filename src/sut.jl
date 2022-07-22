@@ -38,6 +38,10 @@ call(s::SUT, input) = call(s, (input,)) # special case for non-tuple parameters 
 # If input not same types as sut, make them fit. It is the users responsibility that the types match and that a convert implementation exists.
 call(sut::SUT, input::Tuple) = call(sut, convert.(argtypes(sut), input))
 
+# helper functions
+UniformSampling(sut::SUT) = UniformSampling(argtypes(sut))
+BituniformSampling(sut::SUT) = BituniformSampling(argtypes(sut))
+
 # section with suts that come along
 
 myidentity_sut = SUT("identity", (x::Int8) -> x)

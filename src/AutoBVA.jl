@@ -1,7 +1,8 @@
 module AutoBVA
 
-    using Distances, # distances.jl: common metric abstractions
-        InteractiveUtils # cts.jl: subtypes and meta stuff
+    using Distances, # distances.jl: make metrics defs compatible through standard use (SemiMetric, Metric)
+        InteractiveUtils, # cts.jl: subtypes and meta programming support
+        BlackBoxOptim # bbo.jl: detection algs built on framework
 
     # cts.jl
     export compatibletypes, concretetypes, cts_supportedtypes,
@@ -14,11 +15,15 @@ module AutoBVA
 
     # sut.jl
         SUT, name, argtypes, call,
-        myidentity_sut, tuple_sut # example suts
+        myidentity_sut, tuple_sut, # example suts
+
+    # bbo.jl
+        SUTProblem, LocalNeighborSearch, lns
 
     include("cts.jl")
     include("sampling.jl")
     include("distances.jl")
     include("sut.jl")
+    include("detection/bbo.jl")
 
 end # module

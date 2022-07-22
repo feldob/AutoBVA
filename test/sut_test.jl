@@ -3,7 +3,7 @@
     @test SUT("double", (x::Int) -> 2x) isa SUT{Tuple{Int}}
     @test SUT("tuple", (x::Tuple) -> nothing) isa SUT{Tuple{Tuple}} # Tuple can be set as input
 
-    @test "name" == SUT("name", (x) -> true) |> name # verify correct name setting and retrieval
+    @test "name" == SUT("name", (x) -> true) |> AutoBVA.name # verify correct name setting and retrieval
 
     # verify correct output of argtypes
     @test (Int,) == SUT("name", (x::Int) -> true) |> argtypes
