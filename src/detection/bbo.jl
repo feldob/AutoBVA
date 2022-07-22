@@ -37,26 +37,30 @@ function init_bcd(problem::SUTProblem, params)
     evaluator = BlackBoxOptim.ProblemEvaluator(problem)
     ss = get(params, :SamplingStrategy, UniformSampling)(sut(problem)) # as default, use uniform sampling suitable 
     BlackBoxOptim.fitness(collect(nextinput(ss)), evaluator) # initial fake result to not break BBO.
-    return ss, evaluator
+    bca = BoundaryCandidateArchive(sut(problem))
+    return ss, evaluator, bca
 end
 
-# ------------------------LNS -----------------
+# -------------------LNS -----------------
 struct LocalNeighborSearch <: BoundaryCandidateDetector
     problem::SUTProblem
     ss::SamplingStrategy
     evaluator::BlackBoxOptim.Evaluator
+    bca::BoundaryCandidateArchive
 
     LocalNeighborSearch(problem::SUTProblem; opts...) = LocalNeighborSearch(problem, ParamsDict(opts))
     function LocalNeighborSearch(problem::SUTProblem, params)
-        ss, evaluator = init_bcd(problem, params)
-        return new(problem, ss, evaluator)
+        ss, evaluator, bca = init_bcd(problem, params)
+        return new(problem, ss, evaluator, bca)
     end
 end
+
+archive(bcd::BoundaryCandidateDetector) = bcd.bca
 
 function BlackBoxOptim.step!(lns::LocalNeighborSearch)
     input = nextinput(samplingstrategy(lns))
 
-    input_string = string(input)
+    add(archive(lns), input)
     
     return lns
 end
