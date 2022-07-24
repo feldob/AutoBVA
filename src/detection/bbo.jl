@@ -42,7 +42,7 @@ struct BoundaryCandidateDetectionSetup
         params[:TraceMode] = :silent
         evaluator = BlackBoxOptim.ProblemEvaluator(problem)
         ss = get(params, :SamplingStrategy, UniformSampling)(sut(problem)) # as default, use uniform sampling suitable
-        BlackBoxOptim.fitness(collect(nextinput(ss)), evaluator) # initial fake result to not break BBO.
+        BlackBoxOptim.fitness([0.0], evaluator) # initial fake result to not break BBO.
         bca = BoundaryCandidateArchive(sut(problem))
         return new(problem, ss, evaluator, bca)
     end
@@ -129,9 +129,15 @@ end
 lns(p::SUTProblem, opts::Parameters = EMPTY_PARAMS) = alg_instantiator(LocalNeighborSearch, p, opts)
 bcs(p::SUTProblem, opts::Parameters = EMPTY_PARAMS) = alg_instantiator(BoundaryCrossingSearch, p, opts)
 
-function add_autobva_mo_methods_to_bbo()
-    BlackBoxOptim.add_mo_method_to_bbo(:lns, lns)
-    BlackBoxOptim.add_mo_method_to_bbo(:bcs, bcs)
+function add_so_method_to_bbo(id::Symbol, method::Function)
+    BlackBoxOptim.SingleObjectiveMethods[id] = method
+    push!(BlackBoxOptim.SingleObjectiveMethodNames, id)
+    push!(BlackBoxOptim.MethodNames, id)
+ end
+
+function add_autobva_so_methods_to_bbo()
+    add_so_method_to_bbo(:lns, lns)
+    add_so_method_to_bbo(:bcs, bcs)
 end
 
-add_autobva_mo_methods_to_bbo()
+add_autobva_so_methods_to_bbo()

@@ -5,7 +5,7 @@ using BlackBoxOptim
 using Dates # for datesut
 using Printf # for bytecountsut
 
-AutoBVA.add_autobva_mo_methods_to_bbo()
+AutoBVA.add_autobva_so_methods_to_bbo()
 
 include("cts_test.jl")
 include("sampling_test.jl")
