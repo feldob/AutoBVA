@@ -22,7 +22,7 @@ module AutoBVA
         BoundaryCandidateArchive, sut, add, size,
 
     # bbo.jl
-        SUTProblem, LocalNeighborSearch, lns
+        SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs
 
     include("cts.jl")
     include("sampling.jl")

@@ -24,7 +24,7 @@ sut(s::SUT) = s.sut
 argtypes(s::SUT) = s.argtypes
 
 # calling sut with inputs and fold regular and error outputs into regular output stream (currently, for simplicity)
-function call(s::SUT{T}, input::T) where {T <: NTuple}
+function call(s::SUT{T}, input::T) where {T <: Tuple}
     try
         result = sut(s)(input...)
         return result
