@@ -1,3 +1,7 @@
+# defaults for Integers only
+mutationoperators(::Type{<:Integer}) = (+,-)
+mutationoperators(sut::SUT) = map(mutationoperators, argtypes(sut))
+mutationoperators(sut::SUT, dim::Integer) = mutationoperators(sut)[dim]
 
 function singlechangecopy(i::T, index::Int64, value)::T where {T <: Tuple}
     updated = i[1:index-1] # before index

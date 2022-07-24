@@ -3,11 +3,6 @@
 #==============================================================#
 # the detection is not a global optimization problem, but uses the framework offered by bbo faking the optimization process while recording boundary candidates according to the chosen detection strategy (see below).
 
-# defaults for Integers only
-mutationoperators(::Type{<:Integer}) = (+,-)
-mutationoperators(sut::SUT) = map(mutationoperators, argtypes(sut))
-mutationoperators(sut::SUT, dim::Integer) = mutationoperators(sut)[dim]
-
 struct SUTProblem{FS} <: OptimizationProblem{FS}
     sut::SUT
     mos::Tuple{Vararg{Tuple{Vararg{Function}}}}
@@ -33,27 +28,35 @@ BlackBoxOptim.fitness(input::AbstractVector{<:Real}, ::SUTProblem) = 0.0 # fake
 
 # -----------------Framework Glue -----------------
 
+struct BoundaryCandidateDetectionSetup
+    problem::SUTProblem
+    ss::SamplingStrategy
+    evaluator::BlackBoxOptim.Evaluator
+    bca::BoundaryCandidateArchive
+
+    BoundaryCandidateDetectionSetup(problem::SUTProblem; opts...) = BoundaryCandidateDetectionSetup(problem, ParamsDict(opts))
+    function BoundaryCandidateDetectionSetup(problem::SUTProblem, params)
+        params[:MaxNumStepsWithoutFuncEvals] = 0
+        params[:MaxStepsWithoutProgress] = 0
+        params[:PopulationSize] = 1
+        evaluator = BlackBoxOptim.ProblemEvaluator(problem)
+        ss = get(params, :SamplingStrategy, UniformSampling)(sut(problem)) # as default, use uniform sampling suitable
+        BlackBoxOptim.fitness(collect(nextinput(ss)), evaluator) # initial fake result to not break BBO.
+        bca = BoundaryCandidateArchive(sut(problem))
+        return new(problem, ss, evaluator, bca)
+    end
+end
+
 abstract type BoundaryCandidateDetector <: SteppingOptimizer end
 
 popsize(::BoundaryCandidateDetector) = 1 # fake to comply with bbo
-samplingstrategy(bcd::BoundaryCandidateDetector) = bcd.ss
+samplingstrategy(bcd::BoundaryCandidateDetector) = bcd.setup.ss
 τ(bcd::BoundaryCandidateDetector) = 0 # threshold for neighborhood significance
 metric(::BoundaryCandidateDetector) = ProgramDerivative() # here, PD is a fixed default, open up for change in future
-
-function init_bcd(problem::SUTProblem, params)
-    params[:MaxNumStepsWithoutFuncEvals] = 0
-    params[:MaxStepsWithoutProgress] = 0
-    params[:PopulationSize] = 1
-    evaluator = BlackBoxOptim.ProblemEvaluator(problem)
-    ss = get(params, :SamplingStrategy, UniformSampling)(sut(problem)) # as default, use uniform sampling suitable 
-    BlackBoxOptim.fitness(collect(nextinput(ss)), evaluator) # initial fake result to not break BBO.
-    bca = BoundaryCandidateArchive(sut(problem))
-    return ss, evaluator, bca
-end
-
-problem(bcd::BoundaryCandidateDetector) = bcd.problem
+problem(bcd::BoundaryCandidateDetector) = bcd.setup.problem
 sut(bcd::BoundaryCandidateDetector) = sut(problem(bcd))
-archive(bcd::BoundaryCandidateDetector) = bcd.bca
+archive(bcd::BoundaryCandidateDetector) = bcd.setup.bca
+BlackBoxOptim.evaluator(bcd::BoundaryCandidateDetector) = bcd.setup.evaluator
 
 function significant_neighborhood_boundariness(bcd::BoundaryCandidateDetector, i::Tuple)
     return significant_neighborhood_boundariness(sut(bcd), metric(bcd), τ(bcd), i)
@@ -61,16 +64,9 @@ end
 
 # -------------------LNS -----------------
 struct LocalNeighborSearch <: BoundaryCandidateDetector
-    problem::SUTProblem
-    ss::SamplingStrategy
-    evaluator::BlackBoxOptim.Evaluator
-    bca::BoundaryCandidateArchive
+    setup::BoundaryCandidateDetectionSetup
 
-    LocalNeighborSearch(problem::SUTProblem; opts...) = LocalNeighborSearch(problem, ParamsDict(opts))
-    function LocalNeighborSearch(problem::SUTProblem, params)
-        ss, evaluator, bca = init_bcd(problem, params)
-        return new(problem, ss, evaluator, bca)
-    end
+    LocalNeighborSearch(problem, params) = new(BoundaryCandidateDetectionSetup(problem, params))
 end
 
 function BlackBoxOptim.step!(lns::LocalNeighborSearch)
@@ -83,19 +79,11 @@ function BlackBoxOptim.step!(lns::LocalNeighborSearch)
     return lns
 end
 
-
 # ----------------BCS -------------------------
 struct BoundaryCrossingSearch <: BoundaryCandidateDetector
-    problem::SUTProblem
-    ss::SamplingStrategy
-    evaluator::BlackBoxOptim.Evaluator
-    bca::BoundaryCandidateArchive
+    setup::BoundaryCandidateDetectionSetup
 
-    BoundaryCrossingSearch(problem::SUTProblem; opts...) = BoundaryCrossingSearch(problem, ParamsDict(opts))
-    function BoundaryCrossingSearch(problem::SUTProblem, params)
-        ss, evaluator, bca = init_bcd(problem, params)
-        return new(problem, ss, evaluator, bca)
-    end
+    BoundaryCrossingSearch(problem, params) = new(BoundaryCandidateDetectionSetup(problem, params))
 end
 
 function BlackBoxOptim.step!(bcs::BoundaryCrossingSearch)
