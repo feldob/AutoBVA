@@ -5,6 +5,7 @@
                         :MaxTime => 1)
     res = bboptimize(SUTProblem(myidentity_sut); params...)
 
+    @test true
 end
 
 @testset "local neighbor search BCS test" begin
@@ -14,4 +15,5 @@ end
                         :MaxTime => 1)
     res = bboptimize(SUTProblem(myidentity_sut); params...)
 
+    @test true
 end

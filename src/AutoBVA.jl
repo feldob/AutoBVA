@@ -3,6 +3,8 @@ module AutoBVA
     using Distances, # distances.jl: make metrics defs compatible through standard use (SemiMetric, Metric)
         InteractiveUtils, # cts.jl: subtypes and meta programming support
         DataFrames, # boundarycandidates.jl: everything related to storage and export of candidates
+        Printf, # bytecountsut for testing
+        Dates, # datesut for testing
         BlackBoxOptim # bbo.jl: detection algs built on framework
 
     # cts.jl
@@ -24,7 +26,8 @@ module AutoBVA
     #neighbors.jl
 
     #nextboundary.jl
-        next,
+        next, NextBoundary, OutputDelta, OutputTypeDiff,
+
     # bbo.jl
         SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs
 

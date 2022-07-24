@@ -39,6 +39,7 @@ struct BoundaryCandidateDetectionSetup
         params[:MaxNumStepsWithoutFuncEvals] = 0
         params[:MaxStepsWithoutProgress] = 0
         params[:PopulationSize] = 1
+        params[:TraceMode] = :silent
         evaluator = BlackBoxOptim.ProblemEvaluator(problem)
         ss = get(params, :SamplingStrategy, UniformSampling)(sut(problem)) # as default, use uniform sampling suitable
         BlackBoxOptim.fitness(collect(nextinput(ss)), evaluator) # initial fake result to not break BBO.
