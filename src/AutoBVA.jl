@@ -24,7 +24,7 @@ module AutoBVA
     #neighbors.jl
 
     #nextboundary.jl
-
+        next,
     # bbo.jl
         SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs
 
