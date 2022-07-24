@@ -82,12 +82,39 @@ end
 # ----------------BCS -------------------------
 struct BoundaryCrossingSearch <: BoundaryCandidateDetector
     setup::BoundaryCandidateDetectionSetup
+    nb::NextBoundary
 
-    BoundaryCrossingSearch(problem, params) = new(BoundaryCandidateDetectionSetup(problem, params))
+    function BoundaryCrossingSearch(problem, params)
+        setup = BoundaryCandidateDetectionSetup(problem, params)
+        nb = NextBoundary(sut(problem))
+        return new(setup, nb)
+    end
 end
 
+nb(bcs::BoundaryCrossingSearch) = bcs.nb
+
 function BlackBoxOptim.step!(bcs::BoundaryCrossingSearch)
-    # TODO
+    i = nextinput(samplingstrategy(bcs))
+    iₛ = string(i)
+
+    if exists(archive(bcs), iₛ)
+        add_known(archive(bcs), iₛ)
+    elseif significant_neighborhood_boundariness(bcs, i)
+        add_new(archive(bcs), iₛ)
+    else
+        dim = rand(1:numargs(sut(bcs)))
+        operator = rand(mutationoperators(i[dim]))
+        inext = next(nb(bcs), i, dim, operator)
+        if inext != i
+            inextₛ = string(inext)
+            if exists(archive(bcs), inextₛ)
+                add_known(archive(bcs), inextₛ)
+            else
+                add_new(archive(bcs), inextₛ)
+            end
+        end
+    end
+
     return bcs
 end
 

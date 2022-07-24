@@ -1,5 +1,10 @@
+#==============================================================#
+# ------Mutation Operator Tooling for Numbers-------------------
+#==============================================================#
+
 # defaults for Integers only
 mutationoperators(::Type{<:Integer}) = (+,-)
+mutationoperators(::Integer) = mutationoperators(Integer)
 mutationoperators(sut::SUT) = map(mutationoperators, argtypes(sut))
 mutationoperators(sut::SUT, dim::Integer) = mutationoperators(sut)[dim]
 

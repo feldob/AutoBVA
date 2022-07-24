@@ -12,12 +12,17 @@ end
 sut(bca::BoundaryCandidateArchive) = bca.sut
 Base.size(bca::BoundaryCandidateArchive) = length(bca.candidates)
 
-#function add(bca::BoundaryCandidateArchive{T}, i::T) where T
-function add(bca::BoundaryCandidateArchive, i::Tuple) # TODO check how to ensure compatibility here, but still allow for other types.
-    iₛ = string(i)
-    if haskey(bca.candidates, iₛ)
-        bca.candidates[iₛ] += 1
+exists(bca::BoundaryCandidateArchive, iₛ::AbstractString) = haskey(bca.candidates, iₛ)
+
+add_known(bca::BoundaryCandidateArchive, iₛ::AbstractString) = bca.candidates[iₛ] += 1
+add_new(bca::BoundaryCandidateArchive, iₛ::AbstractString) = bca.candidates[iₛ] = 1
+
+function add(bca::BoundaryCandidateArchive, iₛ::AbstractString)
+    if exists(bca, iₛ)
+        add_known(bca, iₛ)
     else
-        bca.candidates[iₛ] = 1
+        add_new(bca, iₛ)
     end
 end
+
+add(bca::BoundaryCandidateArchive, i::Tuple) = add(bca, string(i))

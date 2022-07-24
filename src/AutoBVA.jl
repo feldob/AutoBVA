@@ -23,6 +23,7 @@ module AutoBVA
 
     #neighbors.jl
 
+    #nextboundary.jl
 
     # bbo.jl
         SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs
@@ -33,6 +34,7 @@ module AutoBVA
     include("sut.jl")
     include("detection/boundarycandidates.jl")
     include("detection/neighbors.jl")
+    include("detection/nextboundary.jl")
     include("detection/bbo.jl")
 
 end # module
