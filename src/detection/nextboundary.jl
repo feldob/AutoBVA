@@ -101,7 +101,7 @@ function next_recursive(bs::NextBoundary,
         return input
     else
         outofbounds = !withinbounds(current[dim], incumbent[dim], operand)
-        stopcondition = check(stopcriterion(bs), call(bs, current), call(bs, incumbent), current, incumbent) # TODO dont compute this each time!
+        stopcondition = check(stopcriterion(bs), call(bs, current), call(bs, incumbent), current, incumbent) # version reducing sut calls, see end of file
 
         if outofbounds || stopcondition
             atom = isatomic(by, typeof(input[dim]))
@@ -130,3 +130,81 @@ end
 function next(bs::NextBoundary, input::Tuple, dim::Int64, operand::Function)
     return next_recursive(bs, input, input, dim, operand)
 end
+
+#==============================================================================#
+# ------recursive implementatin for slow suts, where outputs are cached---------
+#==============================================================================#
+# Candidate is an abstraction that ensures the execution of the sut is done exactly once per active input (OBS no cache applied, so if the same input comes up at a later point in time again, it gets evaluated again).
+# to activate, simply uncomment below ->
+
+# mutable struct Candidate
+#     sut::SUT
+#     input::Tuple
+#     output
+
+#     Candidate(sut, input) = new(sut, input)
+# end
+
+# sut(c::Candidate) = c.sut
+# input(c::Candidate) = c.input
+# function output(c::Candidate)
+#     if isdefined(c, :output)
+#         return c.output
+#     else
+#         return c.output = call(sut(c), input(c))
+#     end
+# end
+
+# function next_recursive(bs::NextBoundary,
+#                 start::Candidate,
+#                 current::Candidate,
+#                 dim::Int64,
+#                 operand::Function,
+#                 by=nextby_half(input(current)[dim]),
+#                 counter::Int64=1,
+#                 direction::Direction=forward,
+#                 beta=nothing)
+
+#     incumbent = Candidate(sut(bs), next(input(current), dim, operand, by))
+#     if oversteps(input(incumbent)[dim], beta, operand)
+#         incumbent = Candidate(sut(bs), singlechangecopy(input(incumbent), dim, beta))
+#         by = abs(-(input(current)[dim], beta))
+#     end
+
+#     #"REC($counter) current: $current, incumbent: $incumbent" |> println
+#     if counter > 120 # TODO change back to 120 if not working!!!
+#         #"circuit breaker: $(incumbent[dim])." |> println
+#         return start
+#     else
+#         outofbounds = !withinbounds(input(current)[dim], input(incumbent)[dim], operand)
+#         stopcondition = check(stopcriterion(bs), output(current), output(incumbent), input(current), input(incumbent))
+
+#         if outofbounds || stopcondition
+#             atom = isatomic(by, typeof(input(start)[dim]))
+#             if stopcondition && atom # recursive stop criterion, TODO generalize for other datatypes, e.g. floats (where the min distance may be lower than "one")
+#                 #"successfully converged!: $(incumbent[dim])" |> println
+#                 return incumbent
+#             end
+
+#             if outofbounds
+#                 #"out of bounds: $(incumbent[dim])." |> println
+#                 if atom
+#                     #"out of bounds fail." |> println
+#                     return start
+#                 end
+#             end
+
+#             beta = input(incumbent)[dim] # cutting point for forward search
+#             return next_recursive(bs, start, current, dim, operand, nextby_half(by), counter + 1, backward, beta) # backtracking
+#         else # forward below
+#             by_next = direction == backward ? nextby_half(by) : 2 * by
+#             return next_recursive(bs, start, incumbent, dim, operand, by_next, counter + 1, forward, beta)
+#         end
+#     end
+# end
+
+# function next(bs::NextBoundary, i::Tuple, dim::Int64, operand::Function)
+#     start = Candidate(sut(bs), i)
+#     final = next_recursive(bs, start, start, dim, operand)
+#     return input(final)
+# end
