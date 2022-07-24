@@ -20,7 +20,7 @@ struct SUTProblem{FS} <: OptimizationProblem{FS}
 end
 
 sut(p::SUTProblem) = p.sut
-dims(p::SUTProblem) = length(argtypes(sut(p)))
+dims(p::SUTProblem) = numargs(sut(p))
 
 fake_fitness_scheme() = ScalarFitnessScheme{false}()
 BlackBoxOptim.search_space(::SUTProblem) = ContinuousRectSearchSpace([0.0], [1.0]) # fake
@@ -55,42 +55,8 @@ problem(bcd::BoundaryCandidateDetector) = bcd.problem
 sut(bcd::BoundaryCandidateDetector) = sut(problem(bcd))
 archive(bcd::BoundaryCandidateDetector) = bcd.bca
 
-function singlechangecopy(i::T, index::Int64, value)::T where {T <: Tuple}
-    updated = i[1:index-1] # before index
-    updated = (updated..., value) # index
-    return index ≥ length(i) ? updated :
-            (updated..., i[index+1:length(i)]...) # after index
-end
-
-function edgecase(operator::Function, value::Integer) # TODO get the comparison below right to ensure none inexact errors
-    if operator == (-)
-        return value == typemin(value)
-    elseif operator == (+)
-        return value == typemax(value)
-    else
-        throw(ArgumentError("The operator is unknown, make sure to handle"))
-    end
-end
-
 function significant_neighborhood_boundariness(bcd::BoundaryCandidateDetector, i::Tuple)
-    o = call(sut(bcd), i)
-    oₛ = string(o)
-
-    for dim in 1:dims(problem(bcd))
-        for mo in mutationoperators(sut(problem(bcd)), dim)
-            if edgecase(mo, i[dim])
-                continue
-            end
-
-            iₙ = singlechangecopy(i, dim, mo(i[dim], one(1)))
-            oₙ = call(sut(bcd), iₙ)
-            if evaluate(metric(bcd), oₛ, string(oₙ), i, iₙ) > τ(bcd) # significant boundariness test
-                return true
-            end
-        end
-    end
-
-    return false
+    return significant_neighborhood_boundariness(sut(bcd), metric(bcd), τ(bcd), i)
 end
 
 # -------------------LNS -----------------

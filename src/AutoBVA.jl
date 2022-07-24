@@ -12,7 +12,7 @@ module AutoBVA
         SamplingStrategy, UniformSampling, BituniformSampling, nextinput,
 
     # distances.jl
-        Strlendist, ProgramDerivative, evaluate,
+        Strlendist, RelationalMetric, ProgramDerivative, evaluate,
 
     # sut.jl
         SUT, name, argtypes, call,
@@ -20,6 +20,9 @@ module AutoBVA
 
     # boundarycandidates.jl
         BoundaryCandidateArchive, sut, add, size,
+
+    #neighbors.jl
+
 
     # bbo.jl
         SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs
@@ -29,6 +32,7 @@ module AutoBVA
     include("distances.jl")
     include("sut.jl")
     include("detection/boundarycandidates.jl")
+    include("detection/neighbors.jl")
     include("detection/bbo.jl")
 
 end # module

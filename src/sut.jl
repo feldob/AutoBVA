@@ -21,6 +21,7 @@ end
 
 name(sut::SUT) = sut.name
 sut(s::SUT) = s.sut
+numargs(s::SUT)=length(argtypes(s))
 argtypes(s::SUT) = s.argtypes
 
 # calling sut with inputs and fold regular and error outputs into regular output stream (currently, for simplicity)
