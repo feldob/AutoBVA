@@ -8,6 +8,9 @@
 
     foreach(_ -> (@test nextinput(UniformSampling((Int64,))) isa Tuple{Int64}), 1:5)
     foreach(_ -> (@test nextinput(UniformSampling((Int64,Bool))) isa Tuple{Int64, Bool}), 1:5)
+
+    # FIXME union types not supported yet
+    # foreach(_ -> (@test nextinput(UniformSampling((Union{Int8, Bool},))) isa Union{Int8, Bool}), 1:10)
 end
 
 @testset "BituniformSampling tests with cts" begin

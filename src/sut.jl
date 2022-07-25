@@ -7,7 +7,7 @@ argnames(f::Function) = string.(Base.method_argnames(methods(f).ms[1])[2:end])
 struct SUT{T}
     name::String
     sut::Function
-    argtypes::Tuple{Vararg{DataType}}
+    argtypes::Tuple{Vararg{Type}}
     argnames::Vector{String}
 
     function SUT(name::String, sut::Function)

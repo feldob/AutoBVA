@@ -1,3 +1,6 @@
+myidentity_sut2 = myidentity_sut
+#myidentity_sut2 = SUT("identity2", (x::Union{Int8, Bool}) -> x) # TODO union support not implemented yet
+
 @testset "local neighbor search LNS test" begin
 
     params = ParamsDict(:Method => :lns,
@@ -19,12 +22,12 @@ end
                         :SamplingStrategy => UniformSampling,
                         :CTS => true,
                         :MaxTime => 1)
-    res = bboptimize(SUTProblem(myidentity_sut); params...)
+    res = bboptimize(SUTProblem(myidentity_sut2); params...)
 
     @test res.method_output isa BCDOutput
 
     ranked_candidates = rank_unique(res.method_output; output=true, incl_metric=true, filter=true)
 
     @test nrow(ranked_candidates) > 0
-    sort!(ranked_candidates, 1:numargs(myidentity_sut), rev = true) |> println
+    sort!(ranked_candidates, 1:numargs(myidentity_sut2), rev = true) |> println
 end

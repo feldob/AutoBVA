@@ -4,7 +4,7 @@ abstract type NumericalSamplingStrategy <: SamplingStrategy{Number} end
 
 types(ss::SamplingStrategy) = ss.types
 
-function ensuretypesupport(types::Tuple{Vararg{DataType}}, T::DataType, cts::Bool)
+function ensuretypesupport(types::Tuple{Vararg{Type}}, T::Type, cts::Bool)
     @assert length(types) > 0 "For sampling, a number of argument types has to be defined."
     @assert .&(.<:(types, T)...) "All entered types (here $(types)) must be supported by the sampler."
 
@@ -12,7 +12,7 @@ function ensuretypesupport(types::Tuple{Vararg{DataType}}, T::DataType, cts::Boo
 end
 
 struct UniformSampling <: NumericalSamplingStrategy
-    types::Tuple{Vararg{Set{DataType}}}
+    types::Tuple{Vararg{Set{Type}}}
 
     UniformSampling(types, cts=false) = new(ensuretypesupport(types, Number, cts))
 end
@@ -21,7 +21,7 @@ nextinput(rs::UniformSampling) = rand.(rand.(types(rs)))
 nextinput(rs::UniformSampling, dim::Int64) = rand(rand(types(rs)[dim]))
 
 struct BituniformSampling <: NumericalSamplingStrategy
-    types::Tuple{Vararg{Set{DataType}}}
+    types::Tuple{Vararg{Set{Type}}}
 
     BituniformSampling(types, cts=false) = new(ensuretypesupport(types, Real, cts))
 end
@@ -38,4 +38,4 @@ end
 
 nextinput(rs::BituniformSampling) = tuple(map(i -> nextinput(rs, i), eachindex(rs.types))...)
 nextinput(rs::BituniformSampling, dim::Integer) = bitlogsample(rand(types(rs)[dim]))
-nextinput(::BituniformSampling, type::DataType) = bitlogsample(type)
+nextinput(::BituniformSampling, type::Type) = bitlogsample(type)

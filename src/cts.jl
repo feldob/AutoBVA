@@ -22,15 +22,16 @@ compatibletypes(::Type{Int32}) = compatibletypes(Int16) ∪ compatibletypes(UInt
 compatibletypes(::Type{Int64}) = compatibletypes(Int32) ∪ compatibletypes(UInt32) ∪ Set([Int64])
 compatibletypes(::Type{Int128}) = compatibletypes(Int64) ∪ compatibletypes(UInt64) ∪ Set([Int128])
 compatibletypes(::Type{BigInt}) = compatibletypes(Int128) ∪ Set([BigInt])
+compatibletypes(t::Type{Union}) = Set(compatibletypes.(Base.uniontypes(t)))
 
 # lists all the types that are currently compatible with CTS in the runtime, i.e. there is an available implementation of compatibletypes
 function cts_supportedtypes()
     return  map(m -> m.sig.parameters[2].parameters[1], filter(m -> m.nargs == 2 && m.sig.parameters[2] != Type{Any}, methods(compatibletypes)))
 end
 
-cts_supportedtypes(type::DataType) = filter(t -> t ∈ cts_supportedtypes(), subtypes(type))
+cts_supportedtypes(type::Type) = filter(t -> t ∈ cts_supportedtypes(), subtypes(type))
 
-function concretetypes(type::DataType)
+function concretetypes(type::Type)
     if isconcretetype(type)
         return compatibletypes(type)
     end
