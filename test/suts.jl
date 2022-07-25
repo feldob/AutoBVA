@@ -2,7 +2,12 @@
 datesut = SUT("Julia Date",
                 (year::Int64, month::Int64, day::Int64) -> Date(year, month, day))
 
-# bytecount
+# bytecount Julia
+
+bytecountjuliasut = SUT("ByteCount Julia",
+                (bytes::Integer) -> Base.format_bytes(bytes))
+
+# bytecount, most copied code snippet on Stackoverflow which happens to be buggy (from Java, adjusted to Julia)
 function byte_count_bug(bytes::Integer, si::Bool = true)
     unit = si ? 1000 : 1024
     if bytes < unit

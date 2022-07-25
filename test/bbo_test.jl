@@ -21,7 +21,7 @@ end
                         :SamplingStrategy => BituniformSampling,
                         :CTS => true,
                         :MaxTime => 1)
-    res = bboptimize(SUTProblem(bytecountbugsut); params...)
+    res = bboptimize(SUTProblem(bytecountbugsut); params...) # bytecountjuliasut
 
     @test res.method_output isa BCDOutput
 
