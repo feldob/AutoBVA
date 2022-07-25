@@ -17,7 +17,7 @@ module AutoBVA
         Strlendist, RelationalMetric, ProgramDerivative, evaluate,
 
     # sut.jl
-        SUT, name, argtypes, call,
+        SUT, name, argtypes, call, numargs,
         myidentity_sut, tuple_sut, # example suts
 
     # boundarycandidates.jl
@@ -29,7 +29,7 @@ module AutoBVA
         next, NextBoundary, OutputDelta, OutputTypeDiff,
 
     # bbo.jl
-        SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs
+        SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs, BCDOutput, rank_unique
 
     include("cts.jl")
     include("sampling.jl")

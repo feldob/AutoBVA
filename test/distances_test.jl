@@ -19,7 +19,7 @@
 
 end
 
-@testset "ProgramDerivative 2D" begin
+@testset "ProgramDerivative" begin
 
     @test evaluate(ProgramDerivative(), "a", "a", (1, ), (1, )) |> isnan
     @test Inf == evaluate(ProgramDerivative(), "a", "aa", (1, ), (1, ))
@@ -37,4 +37,7 @@ end
     @test_throws MethodError evaluate(ProgramDerivative(), "a", 1, (1, ), (2, ))
     @test_throws MethodError evaluate(ProgramDerivative(), "a", 1, (1, 2), (2, ))
     @test_throws MethodError evaluate(ProgramDerivative(), "a", 1, (), ())
+
+    #@test_throws InexactError evaluate(ProgramDerivative(), "-40", "-20", (Int8(-40),), (Int8(-20),)) # problem with Int8 that previously threw an exception.
+    @test 0.0 == evaluate(ProgramDerivative(), "-40", "-20", (Int64(-40),), (Int8(-20),)) # mitigation
 end

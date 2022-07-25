@@ -23,6 +23,7 @@ name(sut::SUT) = sut.name
 sut(s::SUT) = s.sut
 numargs(s::SUT)=length(argtypes(s))
 argtypes(s::SUT) = s.argtypes
+argnames(s::SUT) = s.argnames
 
 # calling sut with inputs and fold regular and error outputs into regular output stream (currently, for simplicity)
 function call(s::SUT{T}, input::T) where {T <: Tuple}
@@ -40,10 +41,10 @@ call(s::SUT, input) = call(s, (input,)) # special case for non-tuple parameters 
 call(sut::SUT, input::Tuple) = call(sut, convert.(argtypes(sut), input))
 
 # helper functions
-UniformSampling(sut::SUT) = UniformSampling(argtypes(sut))
-BituniformSampling(sut::SUT) = BituniformSampling(argtypes(sut))
+UniformSampling(sut::SUT, cts::Bool=false) = UniformSampling(argtypes(sut), cts)
+BituniformSampling(sut::SUT, cts::Bool=false) = BituniformSampling(argtypes(sut), cts)
 
 # section with suts that come along
 
 myidentity_sut = SUT("identity", (x::Int8) -> x)
-tuple_sut = SUT("identity", (x::Tuple) -> nothing)
+tuple_sut = SUT("identity", (x::Tuple) -> 0.0)

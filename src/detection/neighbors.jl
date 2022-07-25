@@ -45,3 +45,31 @@ function significant_neighborhood_boundariness(sut::SUT, metric::RelationalMetri
 
     return false
 end
+
+function significant_neighbor(sut::SUT, metric::RelationalMetric, τ::Real, i::Tuple)
+    o = call(sut, i)
+    oₛ = string(o)
+
+    local most_significant_neighbor = i
+    local significance = 0.0
+    local most_significant_output = oₛ
+
+    for dim in 1:numargs(sut)
+        for mo in mutationoperators(sut, dim)
+            if edgecase(mo, i[dim])
+                continue
+            end
+
+            iₙ = singlechangecopy(i, dim, mo(i[dim], 1))
+            oₙ = call(sut, iₙ)
+            significanceₙ = evaluate(metric, oₛ, string(oₙ), i, iₙ)
+            if significanceₙ > τ && significanceₙ > significance
+                most_significant_neighbor = iₙ
+                significance = significanceₙ
+                most_significant_output = oₙ
+            end
+        end
+    end
+
+    return most_significant_neighbor, significance, most_significant_output
+end

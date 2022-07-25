@@ -41,18 +41,21 @@ struct BoundaryCandidateDetectionSetup
         params[:PopulationSize] = 1
         params[:TraceMode] = :silent
         evaluator = BlackBoxOptim.ProblemEvaluator(problem)
-        ss = get(params, :SamplingStrategy, UniformSampling)(sut(problem)) # as default, use uniform sampling suitable
+        cts = get(params, :CTS, false)
+        ss = get(params, :SamplingStrategy, UniformSampling)(sut(problem), cts) # as default, use uniform sampling suitable
         BlackBoxOptim.fitness([0.0], evaluator) # initial fake result to not break BBO.
         bca = BoundaryCandidateArchive(sut(problem))
         return new(problem, ss, evaluator, bca)
     end
 end
 
+τ(::BoundaryCandidateDetectionSetup) = 0
+
 abstract type BoundaryCandidateDetector <: SteppingOptimizer end
 
 popsize(::BoundaryCandidateDetector) = 1 # fake to comply with bbo
 samplingstrategy(bcd::BoundaryCandidateDetector) = bcd.setup.ss
-τ(bcd::BoundaryCandidateDetector) = 0 # threshold for neighborhood significance
+τ(bcd::BoundaryCandidateDetector) = τ(bcd.setup) # threshold for neighborhood significance
 metric(::BoundaryCandidateDetector) = ProgramDerivative() # here, PD is a fixed default, open up for change in future
 problem(bcd::BoundaryCandidateDetector) = bcd.setup.problem
 sut(bcd::BoundaryCandidateDetector) = sut(problem(bcd))
@@ -72,9 +75,12 @@ end
 
 function BlackBoxOptim.step!(lns::LocalNeighborSearch)
     i = nextinput(samplingstrategy(lns))
+    iₛ = string(i)
 
-    if significant_neighborhood_boundariness(lns, i)
-        add(archive(lns), i)
+    if exists(archive(lns), iₛ)
+        add_known(archive(lns), iₛ)
+    elseif significant_neighborhood_boundariness(lns, i)
+        add_new(archive(lns), iₛ)
     end
 
     return lns
@@ -87,7 +93,7 @@ struct BoundaryCrossingSearch <: BoundaryCandidateDetector
 
     function BoundaryCrossingSearch(problem, params)
         setup = BoundaryCandidateDetectionSetup(problem, params)
-        nb = NextBoundary(sut(problem))
+        nb = NextBoundary(sut(problem), OutputDelta(τ(setup)))
         return new(setup, nb)
     end
 end
@@ -118,6 +124,10 @@ function BlackBoxOptim.step!(bcs::BoundaryCrossingSearch)
 
     return bcs
 end
+
+# ------------ OUTPUT TYPE-----------------
+
+include("bbo_io.jl")
 
 # ------------CONNECT ALGS WITH BBO -----------
 

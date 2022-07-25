@@ -23,7 +23,7 @@ nextinput(rs::UniformSampling, dim::Int64) = rand(rand(types(rs)[dim]))
 struct BituniformSampling <: NumericalSamplingStrategy
     types::Tuple{Vararg{Set{DataType}}}
 
-    BituniformSampling(types, cts=false) = new(ensuretypesupport(types, Number, cts))
+    BituniformSampling(types, cts=false) = new(ensuretypesupport(types, Real, cts))
 end
 
 maxbits(::Type{T}) where T <: Unsigned = sizeof(T) * 8

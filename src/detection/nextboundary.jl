@@ -59,7 +59,7 @@ end
 
 τ(od::OutputDelta) = od.τ
 metric(od::OutputDelta) = od.rm
-check(od::OutputDelta, o₁, o₂, i₁::Tuple, i₂::Tuple) = evaluate(metric(od),o₁, o₂, i₁, i₂) > τ(od)
+check(od::OutputDelta, o₁, o₂, i₁::Tuple, i₂::Tuple) = evaluate(metric(od),string(o₁), string(o₂), i₁, i₂) > τ(od)
 
 abstract type BoundarySearch end
 
