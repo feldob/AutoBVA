@@ -1,4 +1,4 @@
-myidentity_sut2 = myidentity_sut
+myidentity_sut2 = SUT("identity2", (x::Int64) -> x)
 #myidentity_sut2 = SUT("identity2", (x::Union{Int8, Bool}) -> x) # TODO union support not implemented yet
 
 @testset "local neighbor search LNS test" begin
@@ -6,7 +6,7 @@ myidentity_sut2 = myidentity_sut
     params = ParamsDict(:Method => :lns,
                         :SamplingStrategy => BituniformSampling,
                         :MaxTime => 1)
-    res = bboptimize(SUTProblem(myidentity_sut); params...)
+    res = bboptimize(SUTProblem(myidentity_sut2); params...)
 
     @test res.method_output isa BCDOutput
 

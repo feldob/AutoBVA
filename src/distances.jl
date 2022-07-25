@@ -12,17 +12,16 @@ end
 
 struct ProgramDerivative <: RelationalMetric end
 
-ensurenotcomplex(i::Tuple{Vararg{<:Real}}) = i[1] isa Int8 ? [convert(Int64, i[1]),i[2:end]...] : i
-
 # Default input distance: Euclidean
 # Default output distance: Strlendist
 # OBS that entering the same input twice results in a divide by zero in the input space (Inf or NaN as result, depending on output consistency).
 function evaluate(::ProgramDerivative, o₁::AbstractString, o₂::AbstractString, i₁::Tuple{Vararg{<:Real}}, i₂::Tuple{Vararg{<:Real}})
-    i₁ = ensurenotcomplex(i₁)
-    i₂ = ensurenotcomplex(i₂)
     # "$o₁, $o₂, $i₁, $i₂, $(typeof(i₁)), $(typeof(i₂))" |> println
 
-    idist = Distances.evaluate(Euclidean(), i₁, i₂)
+    # euclidean
+    #idist = Distances.evaluate(Euclidean(), i₁, i₂) # produced problems "complex numbers"
+    idist = sum((i₁ .- i₂) .^ 2)
+    idist = idist < 0 ? 0.0 : sqrt(idist)
     #"$idist" |> println
 
     odist = evaluate(Strlendist(), o₁, o₂)
