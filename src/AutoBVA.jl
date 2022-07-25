@@ -8,7 +8,7 @@ module AutoBVA
         BlackBoxOptim # bbo.jl: detection algs built on framework
 
     # cts.jl
-    export compatibletypes, concretetypes, cts_supportedtypes,
+    export compatibletypes,
 
     # sampling.jl
         SamplingStrategy, UniformSampling, BituniformSampling, nextinput,

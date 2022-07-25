@@ -51,7 +51,7 @@ function append_outputs!(candidates::DataFrame, sut::SUT)
 
     for (idx, candidate) in enumerate(eachrow(candidates))
         input = candidate[1:numargs(sut)]
-        _output = call(sut, tuple(input...))[1]
+        _output = call(sut, tuple(input...))
         output_column[idx] = _output |> string # TODO for multiple output dims in future, this has to be adjusted
         type_column[idx] = _output |> typeof
     end
@@ -149,7 +149,7 @@ function rank_unique(df::DataFrame, sut::SUT, metric::RelationalMetric, τ; outp
     end
 
     if tosort
-        sort!(df, :count, rev = true)
+        sort!(df, 1:numargs(sut), rev = true)
     end
 
     return df
