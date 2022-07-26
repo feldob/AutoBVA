@@ -27,7 +27,6 @@ end
 
 function significant_neighborhood_boundariness(sut::SUT, metric::RelationalMetric, τ::Real, i::Tuple)
     o = call(sut, i)
-    oₛ = string(o)
 
     for dim in 1:numargs(sut)
         for mo in mutationoperators(sut, dim)
@@ -37,7 +36,7 @@ function significant_neighborhood_boundariness(sut::SUT, metric::RelationalMetri
 
             iₙ = singlechangecopy(i, dim, mo(i[dim], 1))
             oₙ = call(sut, iₙ)
-            if evaluate(metric, oₛ, string(oₙ), i, iₙ) > τ # significant boundariness test
+            if evaluate(metric, stringified(o), string(value(oₙ)), i, iₙ) > τ # significant boundariness test
                 return true
             end
         end
@@ -48,11 +47,10 @@ end
 
 function significant_neighbor(sut::SUT, metric::RelationalMetric, τ::Real, i::Tuple)
     o = call(sut, i)
-    oₛ = string(o)
 
     local most_significant_neighbor = i
     local significance = 0.0
-    local most_significant_output = oₛ
+    local most_significant_output = o
 
     for dim in 1:numargs(sut)
         for mo in mutationoperators(sut, dim)
@@ -62,7 +60,7 @@ function significant_neighbor(sut::SUT, metric::RelationalMetric, τ::Real, i::T
 
             iₙ = singlechangecopy(i, dim, mo(i[dim], 1))
             oₙ = call(sut, iₙ)
-            significanceₙ = evaluate(metric, oₛ, string(oₙ), i, iₙ)
+            significanceₙ = evaluate(metric, stringified(o), stringified(oₙ), i, iₙ)
             if significanceₙ > τ && significanceₙ > significance
                 most_significant_neighbor = iₙ
                 significance = significanceₙ

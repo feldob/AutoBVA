@@ -47,17 +47,20 @@ sut(c::BCDOutput) = c.sut
 function append_outputs!(candidates::DataFrame, sut::SUT)
 
     output_column = Vector{String}(undef, nrow(candidates))
-    type_column = Vector{DataType}(undef, nrow(candidates))
+    outputtype_column = Vector{OutputType}(undef, nrow(candidates))
+    datatype_column = Vector{DataType}(undef, nrow(candidates))
 
     for (idx, candidate) in enumerate(eachrow(candidates))
         input = candidate[1:numargs(sut)]
-        _output = call(sut, tuple(input...))
-        output_column[idx] = _output |> string # TODO for multiple output dims in future, this has to be adjusted
-        type_column[idx] = _output |> typeof
+        output = call(sut, tuple(input...))
+        output_column[idx] = stringified(output)
+        outputtype_column[idx] = outputtype(output)
+        datatype_column[idx] = datatype(output)
     end
 
     candidates[!, :output] = output_column
-    candidates[!, :type] = type_column
+    candidates[!, :datatype] = datatype_column
+    candidates[!, :outputtype] = outputtype_column
 
     return candidates
 end
@@ -68,7 +71,8 @@ function append_significant_neighbor!(candidates::DataFrame, sut::SUT, metric::R
 
     metric_column = Vector{Float64}(undef, nrow(candidates))
     n_output = Vector{String}(undef, nrow(candidates))
-    n_type = Vector{DataType}(undef, nrow(candidates))
+    n_datatype = Vector{DataType}(undef, nrow(candidates))
+    n_outputtype = Vector{OutputType}(undef, nrow(candidates))
 
     n_args_df = DataFrame()
     for (idx, arg) in enumerate(argnames(sut))
@@ -79,8 +83,9 @@ function append_significant_neighbor!(candidates::DataFrame, sut::SUT, metric::R
         input = candidate[1:numargs(sut)]
         iₙ, metric_column[idx], oₙ = significant_neighbor(sut, metric, τ, tuple(input...))
 
-        n_output[idx] = oₙ |> string
-        n_type[idx] = oₙ |> typeof
+        n_output[idx] = string(value(oₙ))
+        n_datatype[idx] = datatype(oₙ)
+        n_outputtype[idx] = outputtype(oₙ)
 
         push!(n_args_df, iₙ)
     end
@@ -90,7 +95,8 @@ function append_significant_neighbor!(candidates::DataFrame, sut::SUT, metric::R
     if output
         candidates = hcat(candidates, n_args_df)
         candidates[!, :n_output] = n_output
-        candidates[!, :n_type] = n_type
+        candidates[!, :n_outputtype] = n_outputtype
+        candidates[!, :n_datatype] = n_datatype
     end
 
     return candidates
@@ -114,9 +120,13 @@ function ensure_row_order!(df::DataFrame, argnames::Vector{String})
             r[:output] = r[:n_output]
             r[:n_output] = tmp
 
-            tmp = r[:type]
-            r[:type] = r[:n_type]
-            r[:n_type] = tmp
+            tmp = r[:outputtype]
+            r[:outputtype] = r[:n_outputtype]
+            r[:n_outputtype] = tmp
+
+            tmp = r[:datatype]
+            r[:datatype] = r[:n_datatype]
+            r[:n_datatype] = tmp
         end
     end
 end

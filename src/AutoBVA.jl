@@ -17,6 +17,8 @@ module AutoBVA
 
     # sut.jl
         SUT, name, argtypes, call, numargs,
+        OutputType, valid, error,
+        SUTOutput, datatype, outputtype, value, stringified,
         myidentity_sut, tuple_sut, # example suts
 
     # boundarycandidates.jl

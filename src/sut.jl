@@ -25,13 +25,34 @@ numargs(s::SUT)=length(argtypes(s))
 argtypes(s::SUT) = s.argtypes
 argnames(s::SUT) = s.argnames
 
+@enum OutputType valid error
+
+mutable struct SUTOutput
+    type::OutputType
+    value
+    stringified::AbstractString
+
+    SUTOutput(type, value) = new(type, value)
+end
+
+value(o::SUTOutput) = o.value
+outputtype(o::SUTOutput) = o.type
+datatype(o::SUTOutput) = typeof(value(o))
+function stringified(s::SUTOutput)
+    if isdefined(s, :stringified)
+        return s.stringified
+    else
+        return s.stringified = string(value(s))
+    end
+end
+
 # calling sut with inputs and fold regular and error outputs into regular output stream (currently, for simplicity)
 function call(s::SUT{T}, input::T) where {T <: Tuple}
     try
         result = sut(s)(input...)
-        return result
+        return SUTOutput(valid::OutputType, result)
     catch err
-        return err
+        return SUTOutput(error::OutputType, err)
     end
 end
 

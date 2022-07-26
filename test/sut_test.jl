@@ -20,10 +20,12 @@ end
 
     # as defined in sut.jl: myidentity_sut = SUT("identity", (x::Int8) -> x)
 
-    @test 1 == call(myidentity_sut, Int8(1))
-    @test 1 == call(myidentity_sut, 1)
-    @test 1 == call(myidentity_sut, (1,))
-    @test 1 == call(myidentity_sut, true)
+    @test call(myidentity_sut, Int8(1)) isa SUTOutput
+    @test 1 == call(myidentity_sut, Int8(1)) |> value
+    @test valid::OutputType == call(myidentity_sut, Int8(1)) |> outputtype
+    @test 1 == call(myidentity_sut, 1) |> value
+    @test 1 == call(myidentity_sut, (1,)) |> value
+    @test 1 == call(myidentity_sut, true) |> value
 
     # @test call(tuple_sut, (1,)) |> isnothing # FIXME at some point support tuples as inputs?!
 

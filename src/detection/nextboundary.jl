@@ -44,11 +44,11 @@ end
 
 abstract type StopCriterion end
 
-check(::StopCriterion, o₁, o₂, i₁::Tuple, i₂::Tuple)::Bool = throws("implementation required")
+check(::StopCriterion, o₁::SUTOutput, o₂::SUTOutput, i₁::Tuple, i₂::Tuple)::Bool = throws("implementation required")
 
 struct OutputTypeDiff <: StopCriterion end
 
-check(::OutputTypeDiff, o₁, o₂, i₁::Tuple, i₂::Tuple) = typeof(o₁) != typeof(o₂)
+check(::OutputTypeDiff, o₁::SUTOutput, o₂::SUTOutput, i₁::Tuple, i₂::Tuple) = datatype(o₁) != datatype(o₂)
 
 struct OutputDelta <: StopCriterion
     τ::Real
@@ -59,7 +59,7 @@ end
 
 τ(od::OutputDelta) = od.τ
 metric(od::OutputDelta) = od.rm
-check(od::OutputDelta, o₁, o₂, i₁::Tuple, i₂::Tuple) = evaluate(metric(od),string(o₁), string(o₂), i₁, i₂) > τ(od)
+check(od::OutputDelta, o₁::SUTOutput, o₂::SUTOutput, i₁::Tuple, i₂::Tuple) = evaluate(metric(od),string(value(o₁)), string(value(o₂)), i₁, i₂) > τ(od)
 
 abstract type BoundarySearch end
 
