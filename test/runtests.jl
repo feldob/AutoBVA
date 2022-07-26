@@ -5,8 +5,6 @@ using BlackBoxOptim
 using Dates # for datesut
 using Printf # bytecount sut
 
-AutoBVA.add_autobva_so_methods_to_bbo() # add BCS and LNS to BlackBoxOptim at start # TODO make obsolete
-
 # Date (for some tests)
 datesut = SUT("Julia Date",
                 (year::Int64, month::Int64, day::Int64) -> Date(year, month, day))

@@ -1,13 +1,5 @@
 #myidentity_sut2 = SUT("identity2", (x::Union{Int8, Bool}) -> x) # TODO union support not implemented yet
 
-# activate once taken care of the misterium of algs disappearing for each build
-# @testset "alg availability test" begin
-
-#     @test isdefined(BlackBoxOptim, :SingleObjectiveMethods)
-#     @test :lns ∈ keys(BlackBoxOptim.SingleObjectiveMethods)
-#     @test :bcs ∈ keys(BlackBoxOptim.SingleObjectiveMethods)
-# end
-
 @testset "local neighbor search LNS test" begin
 
     params = ParamsDict(:Method => :lns,

@@ -139,18 +139,73 @@ end
 lns(p::SUTProblem, opts::Parameters = EMPTY_PARAMS) = alg_instantiator(LocalNeighborSearch, p, opts)
 bcs(p::SUTProblem, opts::Parameters = EMPTY_PARAMS) = alg_instantiator(BoundaryCrossingSearch, p, opts)
 
-# TODO maybe create a reference and export so that its accessible from outside?!
-function add_so_method_to_bbo(id::Symbol, method::Function)
-    BlackBoxOptim.SingleObjectiveMethods[id] = method
-    push!(BlackBoxOptim.SingleObjectiveMethodNames, id)
-    push!(BlackBoxOptim.MethodNames, id)
- end
+add_so_method_to_bbo(id::Symbol, method::Function) = BlackBoxOptim.SingleObjectiveMethods[id] = method
 
 function add_autobva_so_methods_to_bbo()
     add_so_method_to_bbo(:lns, lns)
     add_so_method_to_bbo(:bcs, bcs)
+
+    push!(BlackBoxOptim.SingleObjectiveMethodNames, :lns)
+    push!(BlackBoxOptim.SingleObjectiveMethodNames, :bcs)
+    sort!(BlackBoxOptim.SingleObjectiveMethodNames)
+
+    push!(BlackBoxOptim.MethodNames, :lns)
+    push!(BlackBoxOptim.MethodNames, :bcs)
+    sort!(BlackBoxOptim.MethodNames)
 end
 
-add_autobva_so_methods_to_bbo() # hopefully can reset need to always call from outside
+# entirely copied from BlackBoxOptim (" last function in default_parameters.jl"), and extended to ensure algs are in place.
 
-# const BBOMethodsRef = BlackBoxOptim.SingleObjectiveMethods
+function BlackBoxOptim.check_valid!(params::Parameters)
+    if :lns ∉ BlackBoxOptim.SingleObjectiveMethodNames
+        add_autobva_so_methods_to_bbo()
+    end
+
+    # Check that max_time is larger than zero if it has been specified.
+    if haskey(params, :MaxTime)
+        if !isa(params[:MaxTime], Number) || params[:MaxTime] < 0.0
+            throw(ArgumentError("MaxTime parameter must be a non-negative number"))
+        elseif params[:MaxTime] > 0.0
+            params[:MaxTime] = convert(Float64, params[:MaxTime])
+            params[:MaxFuncEvals] = 0
+            params[:MaxSteps] = 0
+        end
+    end
+
+    # Check that a valid number of fevals has been specified. Print warning if higher than 1e8.
+    if haskey(params,:MaxFuncEvals)
+        if !isa(params[:MaxFuncEvals], Integer) || params[:MaxFuncEvals] < 0.0
+            throw(ArgumentError("MaxFuncEvals parameter MUST be a non-negative integer"))
+        elseif params[:MaxFuncEvals] > 0.0
+            if params[:MaxFuncEvals] >= 1e8
+                @warn("Number of allowed function evals is $(params[:MaxFuncEvals]); this can take a LONG time")
+            end
+            params[:MaxFuncEvals] = convert(Int, params[:MaxFuncEvals])
+            params[:MaxSteps] = 0
+        end
+    end
+
+    # Check that a valid number of iterations has been specified. Print warning if higher than 1e8.
+    if haskey(params, :MaxSteps)
+        if !isa(params[:MaxSteps], Number) || params[:MaxSteps] < 0.0
+            throw(ArgumentError("The number of iterations (MaxSteps) MUST be a non-negative number"))
+        elseif params[:MaxSteps] > 0.0
+            if params[:MaxSteps] >= 1e8
+                @warn("Number of allowed iterations is $(params[:MaxSteps]); this can take a LONG time")
+            end
+            params[:MaxSteps] = convert(Int, params[:MaxSteps])
+        end
+    end
+
+    # Check that a valid population size has been given.
+    if params[:PopulationSize] < 2
+        # FIXME why? What if we use popsize of 1 for optimizers that improve on one solution?
+        throw(ArgumentError("The population size MUST be at least 2"))
+    end
+
+    method = params[:Method]
+    # Check that a valid method has been specified and then set up the optimizer
+    if !isa(method, Symbol) || method ∉ BlackBoxOptim.MethodNames
+        throw(ArgumentError("The method specified, $(method), is NOT among the valid methods:   $(MethodNames)"))
+    end
+end

@@ -66,7 +66,6 @@ function append_outputs!(candidates::DataFrame, sut::SUT)
 end
 
 # OBS assumes that count is part of the inputs
-# OBS so far, only including the first and generic naming of "metric"
 function append_significant_neighbor!(candidates::DataFrame, sut::SUT, metric::RelationalMetric, τ::Real; output::Bool=false)
 
     metric_column = Vector{Float64}(undef, nrow(candidates))
