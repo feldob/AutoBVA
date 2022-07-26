@@ -1,10 +1,14 @@
 module AutoBVA
 
+    #-------------Detection----------------------------------#
+
     using Distances, # distances.jl: make metrics defs compatible through standard use (SemiMetric, Metric)
         InteractiveUtils, # cts.jl: subtypes and meta programming support
         DataFrames, # boundarycandidates.jl: everything related to storage and export of candidates
         Dates, # datesut for testing
-        BlackBoxOptim # bbo.jl: detection algs built on framework
+        BlackBoxOptim, # bbo.jl: detection algs built on framework
+        StringDistances, # summarize.jl + Strlendist <: StringMetric in distances.jl
+        CSV # summarize.jl
 
     # cts.jl
     export compatibletypes,
@@ -24,13 +28,20 @@ module AutoBVA
     # boundarycandidates.jl
         BoundaryCandidateArchive, sut, add, size,
 
-    #neighbors.jl
+    # neighbors.jl
 
-    #nextboundary.jl
+    # nextboundary.jl
         next, NextBoundary, OutputDelta, OutputTypeDiff,
 
     # bbo.jl
-        SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs, BCDOutput, rank_unique
+        SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs, BCDOutput, rank_unique,
+
+
+    #-------------Summarization-------------------------------#
+    # summarize.jl
+        ClusteringFeature, sl_d, jc_d, lv_d, sl_u, jc_u, lv_u,
+        ClusteringSummarization, summarize, loadsummary
+
 
     include("cts.jl")
     include("sampling.jl")
@@ -40,5 +51,7 @@ module AutoBVA
     include("detection/neighbors.jl")
     include("detection/nextboundary.jl")
     include("detection/bbo.jl")
+
+    include("summarization/summarize.jl")
 
 end # module

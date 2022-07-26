@@ -1,6 +1,6 @@
 # OBS current limitation is that inputs must be numbers, and that the output distance (after Strlendist) automatically falls back to geometrical euclidean, direct line distance.
 
-struct Strlendist <: Metric end
+struct Strlendist <: StringMetric end
 
 evaluate(::Strlendist, t₁::AbstractString, t₂::AbstractString) = Distances.evaluate(Euclidean(), length(t₁), length(t₂))
 

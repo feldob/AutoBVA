@@ -4,6 +4,7 @@ using DataFrames
 using BlackBoxOptim
 using Dates # for datesut
 using Printf # bytecount sut
+using CSV # summarize i/o
 
 # Date (for some tests)
 datesut = SUT("Julia Date",
@@ -21,6 +22,8 @@ function byte_count_bug(bytes::Integer, si::Bool = true)
 end
 
 bcsut = SUT("bytecount (buggy)", (x::Integer) -> byte_count_bug(x))
+
+include("summarize_test.jl")
 
 include("cts_test.jl")
 include("sampling_test.jl")

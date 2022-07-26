@@ -155,6 +155,7 @@ function add_autobva_so_methods_to_bbo()
 end
 
 # copied over from BBO as a hook to ensure the algs are added!
+# from : https://github.com/robertfeldt/BlackBoxOptim.jl/blob/c5fb5815de43f6ad9991efdd473138c4d0a459c9/src/bboptimize.jl#L91
 function BlackBoxOptim.bboptimize(functionOrProblem::SUTProblem, parameters::Parameters = BlackBoxOptim.EMPTY_PARAMS; kwargs...)
     if :lns ∉ BlackBoxOptim.SingleObjectiveMethodNames
         add_autobva_so_methods_to_bbo()
