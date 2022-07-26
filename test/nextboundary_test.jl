@@ -35,8 +35,6 @@ end
 
 @testset "next boundary value diff tests" begin
 
-    bcsut = SUT("bytecount (buggy)", (x::Integer) -> byte_count_bug(x))
-
     @test (10, ) == next(NextBoundary(bcsut, OutputDelta()), (3, ), 1, +)
 
     @test (10, ) == next(NextBoundary(bcsut, OutputDelta()), (3, ), 1, +)

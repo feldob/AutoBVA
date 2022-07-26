@@ -10,7 +10,6 @@
     @test res.method_output isa BCDOutput
 
     ranked_candidates = rank_unique(res.method_output; output=true, incl_metric=true, filter=true, tosort=true)
-    ranked_candidates |> println
 
     @test nrow(ranked_candidates) > 0
 end
@@ -21,12 +20,22 @@ end
                         :SamplingStrategy => BituniformSampling,
                         :CTS => true,
                         :MaxTime => 1)
-    res = bboptimize(SUTProblem(bytecountbugsut); params...) # bytecountjuliasut
+    res = bboptimize(SUTProblem(myidentity_sut); params...)
 
     @test res.method_output isa BCDOutput
 
     ranked_candidates = rank_unique(res.method_output; output=true, incl_metric=true, filter=true, tosort=true)
-    ranked_candidates |> println
 
     @test nrow(ranked_candidates) > 0
+end
+
+@testset "unsigned issue with dataframe grouping" begin
+    df = DataFrame(:a => Integer[UInt64(1), -1], :n_a => Integer[UInt64(2), -2])
+
+    @test_throws InexactError DataFrames.groupby(df, [:a, :n_a])
+
+    df = AutoBVA.avoidInexactErrorWhenGrouping(df, ["a"])
+
+    DataFrames.groupby(df, [:a, :n_a])
+    @test true
 end

@@ -121,12 +121,31 @@ function ensure_row_order!(df::DataFrame, argnames::Vector{String})
     end
 end
 
+# avoids : LoadError: InexactError: check_top_bit(UInt64, -1) for unsigned
+function avoidInexactErrorWhenGrouping(df::DataFrame, argnames::AbstractVector{<:AbstractString})
+    argnames_n = map(x -> "n_$x", argnames)
+
+    for arg in vcat(argnames, argnames_n)
+        col = df[!,arg]
+        # get all indices where there are unsigned ints
+        idxs = findall(x -> x isa Unsigned, col)
+        # in-place, substitute them by BigInts.
+        col[idxs] = convert.(BigInt, col[idxs])
+    end
+
+    return df
+end
+
 # boundaries that are present both ways should be folded into one (two rows reduced to one).
 # OBS we assume the df to have a count column, and thus that each row is unique
+
 function merge_twins_for(df::DataFrame, sut::SUT)
     ensure_row_order!(df, argnames(sut))
 
     fieldnames = setdiff(names(df), ["count"])
+
+    # else triggers : LoadError: InexactError: check_top_bit(UInt64, -1) for unsigned
+    df = avoidInexactErrorWhenGrouping(df, argnames(sut))
 
     combine(DataFrames.groupby(df, fieldnames), :count => sum, renamecols=false)
 end
