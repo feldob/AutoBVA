@@ -1,3 +1,9 @@
+@testset "Sampling abstract types" begin
+    @test UniformSampling((Integer,)) isa SamplingStrategy
+    @test (Set([Int128]),) == types(UniformSampling((Integer,)))
+    @test (Set([Int128]),Set([UInt128])) == types(UniformSampling((Integer,Unsigned)))
+end
+
 @testset "UniformSampling tests" begin
 
     @test UniformSampling((Int64,)) isa SamplingStrategy

@@ -10,7 +10,7 @@ module AutoBVA
     export compatibletypes,
 
     # sampling.jl
-        SamplingStrategy, UniformSampling, BituniformSampling, nextinput,
+        SamplingStrategy, UniformSampling, BituniformSampling, nextinput, types,
 
     # distances.jl
         Strlendist, RelationalMetric, ProgramDerivative, evaluate,

@@ -5,6 +5,8 @@ concreteargtype(::Type{Integer}) = Int128
 concreteargtype(::Type{Signed}) = Int128
 concreteargtype(::Type{Unsigned}) = UInt128
 
+makeconcrete(t::Type) = isconcretetype(t) ? t : concreteargtype(t)
+
 compatibletypes(x::Type{Any}) = DomainError(typeof(x), "No implementation for type $(typeof(x)) available, must implement before use.") |> throw
 
 compatibletypes(::Type{Bool}) = Set([Bool])

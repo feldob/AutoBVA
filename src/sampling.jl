@@ -8,7 +8,7 @@ function ensuretypesupport(types::Tuple{Vararg{Type}}, T::Type, cts::Bool)
     @assert length(types) > 0 "For sampling, a number of argument types has to be defined."
     @assert .&(.<:(types, T)...) "All entered types (here $(types)) must be supported by the sampler."
 
-    return cts ? compatibletypes(types) : map(t -> Set([t]), types)
+    return cts ? compatibletypes(types) : map(t -> Set([t]), makeconcrete.(types))
 end
 
 struct UniformSampling <: NumericalSamplingStrategy
