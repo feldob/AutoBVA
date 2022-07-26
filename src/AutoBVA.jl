@@ -24,11 +24,14 @@ module AutoBVA
 
     #neighbors.jl
 
+    # figuring out how to set algs for BlackBoxOptim without needing to run when starting on user side.
+    BBOMethodsRef,
+
     #nextboundary.jl
         next, NextBoundary, OutputDelta, OutputTypeDiff,
 
     # bbo.jl
-        SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs, BCDOutput, rank_unique, add_autobva_so_methods_to_bbo
+        SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs, BCDOutput, rank_unique#, add_autobva_so_methods_to_bbo
 
     include("cts.jl")
     include("sampling.jl")

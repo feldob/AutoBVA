@@ -131,6 +131,9 @@ function next(bs::NextBoundary, input::Tuple, dim::Int64, operand::Function)
     return next_recursive(bs, input, input, dim, operand)
 end
 
+
+# TODO have a smart mechanism that decides the alg to use, depending on the time it takes to run the sut commonly. (This could go as far as different ranges of the space use different alg impls.)
+
 #==============================================================================#
 # ------recursive implementatin for slow suts, where outputs are cached---------
 #==============================================================================#

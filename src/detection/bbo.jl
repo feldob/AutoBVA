@@ -139,6 +139,7 @@ end
 lns(p::SUTProblem, opts::Parameters = EMPTY_PARAMS) = alg_instantiator(LocalNeighborSearch, p, opts)
 bcs(p::SUTProblem, opts::Parameters = EMPTY_PARAMS) = alg_instantiator(BoundaryCrossingSearch, p, opts)
 
+# TODO maybe create a reference and export so that its accessible from outside?!
 function add_so_method_to_bbo(id::Symbol, method::Function)
     BlackBoxOptim.SingleObjectiveMethods[id] = method
     push!(BlackBoxOptim.SingleObjectiveMethodNames, id)
@@ -150,4 +151,6 @@ function add_autobva_so_methods_to_bbo()
     add_so_method_to_bbo(:bcs, bcs)
 end
 
-add_autobva_so_methods_to_bbo()
+add_autobva_so_methods_to_bbo() # hopefully can reset need to always call from outside
+
+# const BBOMethodsRef = BlackBoxOptim.SingleObjectiveMethods
