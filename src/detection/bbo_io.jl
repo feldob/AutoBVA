@@ -59,8 +59,8 @@ function append_outputs!(candidates::DataFrame, sut::SUT)
     end
 
     candidates[!, :output] = output_column
-    candidates[!, :datatype] = datatype_column
     candidates[!, :outputtype] = outputtype_column
+    candidates[!, :datatype] = datatype_column
 
     return candidates
 end
