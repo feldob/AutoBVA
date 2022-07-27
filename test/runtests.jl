@@ -5,6 +5,7 @@ using BlackBoxOptim
 using Dates # for datesut
 using Printf # bytecount sut
 using CSV # summarize i/o
+using Combinatorics # summarize
 
 # Date (for some tests)
 datesut = SUT("Julia Date",

@@ -1,3 +1,24 @@
+struct ClusteringSummarization <: BoundaryCandidateSummarization
+    df::DataFrame
+    sutname::AbstractString
+    features::AbstractVector{<:ClusteringFeature}
+    rounds::Integer
+    expdir::AbstractString
+    VGs::Tuple{Vararg{ValidityGroup}}
+    highdiv::Bool
+
+    #TODO make sure to convert df into "String only".
+    function ClusteringSummarization(df::DataFrame, sutname, features, rounds=1, expdir="", VGs=instances(ValidityGroup), highdiv=false)
+        new(df, sutname, features, rounds, expdir, VGs, highdiv)
+    end
+
+    function ClusteringSummarization(dffile::AbstractString, sutname, features, rounds=1, VGs=instances(ValidityGroup), highdiv=false)
+        expdir = dirname(abspath(dffile))
+        expdir |> println
+        ClusteringSummarization(loadsummary(dffile), sutname, features, rounds, expdir, VGs, highdiv)
+    end
+end
+
 struct ClusteringResult <: BoundaryResult
     df::DataFrame
     silhouettescore::Float64
@@ -5,6 +26,7 @@ end
 
 clusterframes(r::ClusteringResult) = groupby(r.df, :cluster)
 numclusters(r::ClusteringResult) = unique(r.df[!,:cluster]) |> length
+silhouettescore(r::ClusteringResult) = r.silhouettescore
 
 function single_clustering(df_o::DataFrame, df::DataFrame, VG::ValidityGroup)
     df_n = DataFrame(df)
@@ -36,7 +58,7 @@ normalizerows(m) = normalizecolumns(m')'
 
 empty_clustering(df::DataFrame) = ClusteringResult(hcat(df, DataFrame(clustering = String[], cluster = Int[])), 0.0) # fake score
 
-function feature_matrix(setup::ClusteringSummarization, VG::ValidityGroup, df::DataFrame)
+function feature_matrix(setup::ClusteringSummarization, df::DataFrame)
     _nfeatures = sum(nfeatures.(setup.features))
     x = zeros(_nfeatures, nrow(df))
 
@@ -69,9 +91,10 @@ function regular_classify(df_n::DataFrame, df_o::DataFrame, df_s::DataFrame, x, 
 
     counter = 0
     for row in eachrow(df_s)
+        #TODO change interface of features to take in two vectors instead. and then return one vector.
         #f = zeros(Float64, _nfeatures)
         # currentidx = 1
-        # for clf in clfs
+        # for clf in features
         #     res = call(clf, row)
         #     for idx in eachindex(res)
         #         f[currentidx] = res[idx]
@@ -100,7 +123,7 @@ function regular_classify(df_n::DataFrame, df_o::DataFrame, df_s::DataFrame, x, 
     return vcat(df_n, df_s)
 end
 
-highdiveval(m, f) = map(x -> x ≥ maximum(f) * 1, f) |> findlast
+highdiveval(m, f) = map(x -> x ≥ maximum(f) * .95, f) |> findlast
 
 function bestclustering(setup::ClusteringSummarization, x::AbstractMatrix{Float64}, dists=pairwise(Euclidean(), x, dims=2))
 
@@ -138,17 +161,44 @@ function bestclustering(setup::ClusteringSummarization, x::AbstractMatrix{Float6
      return best_RS[winner_overall], best_fitnesses[winner_overall]
 end
 
+function diverse_subset(s::ClusteringSummarization, df::DataFrame, matrix_size::Integer)
+
+    df = df[sample(1:size(df,1), size(df,1), replace=false),:]  # shulle content to maximize spread in each round
+
+    churn = div(matrix_size, 10)   # number of incrementally removed entries of low diversity
+
+    df_res = df[1:matrix_size-churn, :]  # dataframe to be incrementally improved
+
+    "total size: $(nrow(df))" |> println
+    df_remainder = df[matrix_size+1:end, :]    # remaining entries to be tested to qualify
+    while !isempty(df_remainder)
+        lastentry = min(churn, nrow(df_remainder))              # decide cutting point
+        "size remainder: $(nrow(df_remainder)))" |> println
+        df_next = df_remainder[1:lastentry, :]                  # get next batch
+        df_remainder = df_remainder[lastentry+1:end, :]         # remove selection from remainder
+
+        df_res = vcat(df_res, df_next)                          # combine the existing and new ones
+        x_norm = feature_matrix(s.sutname, df_res)              # calculate the diversity
+        divsum = sum(x_norm, dims = 2)[:,1]                     # calculate overall diversity per entry as sum
+        idx = partialsortperm(divsum, 1:3)                      # lowest div candidate indices
+        df_res = df_res[Not(idx),:]                             # remove entries that do not contribute to diversity
+    end
+
+    return df_res
+end
+
+
 function regular_clustering(setup::ClusteringSummarization, df_o::DataFrame, df::DataFrame, VG::ValidityGroup)
 
     if nrow(df) > MAX_CLUSTERING_SIZE    # still too many, do heuristic "Monte Carlo" Model
-        df_m = diverse_subset(setup, df, MAX_CLUSTERING_SIZE)   # TODO copy
+        df_m = diverse_subset(setup, df, MAX_CLUSTERING_SIZE)
         return regular_clustering(setup, df_o, df_m, VG) # TODO copy
     end
 
     df_n = DataFrame(df)
     df_n.clustering = fill!(Vector{String}(undef, nrow(df_n)), string(VG))
 
-    x_norm = feature_matrix(setup, VG, df)
+    x_norm = feature_matrix(setup, df)
     x_dists = pairwise(Euclidean(), x_norm, dims=2)
 
     "start clustering..." |> print
@@ -189,9 +239,37 @@ function summarize(setup::ClusteringSummarization, tofile::Bool=false)
     end
 
     if tofile
-        result_path = setup.expdir * "_clusterings"
-        mkpath(result_path)
-        CSV.write(joinpath(result_path, setup.sutname * "_clustering.csv"), asone(summary))
+        mkpath(setup.expdir)
+        CSV.write(joinpath(setup.expdir, setup.sutname * "_clustering.csv"), asone(summary))
+    end
+
+    return summary
+end
+
+function screen(s::ClusteringSummarization, tofile::Bool=false)
+
+    feature_perms = collect(combinations(clusteringfeatures))
+    feature_perms = filter(x -> length(x) > 1, feature_perms) # combine at least 2 features!
+
+    df_scores = DataFrame(id = String[], score = Float32[], nclust = Int8[])
+
+    expdir = joinpath(s.expdir, "screening")
+    for feature_perm in feature_perms
+        expid_s = join(id.(feature_perm), "-")
+        expid_s |> println
+
+        setup_perm = ClusteringSummarization(s.df, "$(s.sutname)_$(expid_s)", feature_perm, s.rounds, expdir, s.VGs, s.highdiv)
+        summary = summarize(setup_perm, tofile)
+
+        res = result(summary, s.VGs[1]) #TODO assumes that only one is run here.
+        silhouette_score = silhouettescore(res)
+        push!(df_scores, (expid_s, silhouette_score, numclusters(res)))
+    end
+
+    sort!(df_scores, [:score, :nclust])
+
+    if tofile
+        CSV.write(joinpath(expdir, "$(s.sutname)_clustering_scores.csv"), df_scores)
     end
 
     return summary

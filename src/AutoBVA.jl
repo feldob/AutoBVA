@@ -10,6 +10,7 @@ module AutoBVA
         StringDistances, # summarize.jl + Strlendist <: StringMetric in distances.jl
         Clustering, # summarize.jl
         Statistics, # summarize.jl -> mean
+        Combinatorics, # clustering.jl -> combinations
         CSV # summarize.jl
 
 
@@ -43,9 +44,9 @@ module AutoBVA
     #-------------Summarization-------------------------------#
     # summarize.jl
         ClusteringFeature, sl_d, jc_d, lv_d, sl_u, jc_u, lv_u,
-        ClusteringSummarization, summarize, loadsummary,
+        ClusteringSummarization, summarize, screen, loadsummary,
         BoundarySummary, ValidityGroup, VV, VE, EE,
-        clusterframes, numclusters
+        clusterframes, numclusters, silhouettescore, result
 
     global const MAX_CLUSTERING_SIZE = 1000
 

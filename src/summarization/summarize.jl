@@ -10,25 +10,6 @@ abstract type BoundaryCandidateSummarization end
 
 loadsummary(path) = CSV.read(path, DataFrame; type = String)
 
-struct ClusteringSummarization <: BoundaryCandidateSummarization
-    df::DataFrame
-    sutname::AbstractString
-    features::AbstractVector{<:ClusteringFeature}
-    rounds::Integer
-    expdir::AbstractString
-    VGs::Tuple{Vararg{ValidityGroup}}
-    highdiv::Bool
-
-    #TODO make sure to convert df into "String only".
-    function ClusteringSummarization(df::DataFrame, sutname, features, rounds=1, expdir="", VGs=instances(ValidityGroup), highdiv=false)
-        new(df, sutname, features, rounds, expdir, VGs, highdiv)
-    end
-
-    function ClusteringSummarization(expdir::AbstractString, sutname, features, rounds=1, VGs=instances(ValidityGroup), highdiv=false)
-        ClusteringSummarization(loadsummary(expdir), sutname, features, rounds, expdir, VGs, highdiv)
-    end
-end
-
 abstract type BoundaryResult end
 
 struct BoundarySummary{R<:BoundaryResult}
@@ -37,6 +18,7 @@ struct BoundarySummary{R<:BoundaryResult}
     BoundarySummary{R}() where R = new{R}(Dict{ValidityGroup,R}())
 end
 
+result(cs::BoundarySummary, VG::ValidityGroup) = cs.results[VG]
 add(cs::BoundarySummary, VG::ValidityGroup, result::BoundaryResult) = cs.results[VG] = result
 asone(cs::BoundarySummary) = vcat(collect(map(r -> r.df, values(cs.results)))...)
 
