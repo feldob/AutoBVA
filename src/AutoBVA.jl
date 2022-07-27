@@ -8,7 +8,10 @@ module AutoBVA
         Dates, # datesut for testing
         BlackBoxOptim, # bbo.jl: detection algs built on framework
         StringDistances, # summarize.jl + Strlendist <: StringMetric in distances.jl
+        Clustering, # summarize.jl
+        Statistics, # summarize.jl -> mean
         CSV # summarize.jl
+
 
     # cts.jl
     export compatibletypes,
@@ -41,7 +44,8 @@ module AutoBVA
     # summarize.jl
         ClusteringFeature, sl_d, jc_d, lv_d, sl_u, jc_u, lv_u,
         ClusteringSummarization, summarize, loadsummary,
-        BoundarySummary
+        BoundarySummary, ValidityGroup, VV, VE, EE,
+        clusterframes, numclusters
 
     global const MAX_CLUSTERING_SIZE = 1000
 

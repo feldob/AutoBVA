@@ -2,39 +2,7 @@
 # --------------Boundary Candidate Summarization Method---------
 #==============================================================#
 
-struct ClusteringFeature
-    id::String
-    ffunctions::Vector{Function}
-    function ClusteringFeature(id, metric, ffunctions::Vector{Function})
-        ffunctions_mapped = map(f -> (x) -> f(metric,x), ffunctions)
-        return new(id, ffunctions_mapped)
-    end
-end
-
-id(cf::ClusteringFeature) = cf.id
-nfeatures(cf::ClusteringFeature) = length(cf.ffunctions)
-call(cf::ClusteringFeature, df::DataFrame) = map(f -> f(df), cf.ffunctions)
-
-withindistance(m, df) = [ m(df[i, "output"], df[i, "n_output"]) for i in 1:nrow(df) ]
-
-function uniqueness(distmetric, vector::AbstractVector{<:AbstractString})
-    uniq_pw = pairwise(distmetric, vector)
-    sum(uniq_pw, dims = 2)
-end
-
-function uniqueness(distmetric, v::AbstractString, vs::AbstractVector{<:AbstractString})
-    return sum(x -> distmetric(x,v), vs)
-end
-
-sl_d = ClusteringFeature("sl_d", Strlendist(), Function[(m,df) -> withindistance(m, df)])     # index 1, SELECTED
-jc_d = ClusteringFeature("jc_d",StringDistances.Overlap(2), Function[(m,df) -> withindistance(m, df)]) # index 2, SELECTED
-lv_d = ClusteringFeature("lv_d",NMD(2), Function[(m,df) -> withindistance(m, df)])
-
-sl_u = ClusteringFeature("sl_u", Strlendist(), Function[(m,df) -> uniqueness(m, df[:,"output"]), (m,df) -> uniqueness(m, df[:,"n_output"])])
-jc_u = ClusteringFeature("jc_u", StringDistances.Overlap(2), Function[(m,df) -> uniqueness(m, df[:,"output"]), (m,df) -> uniqueness(m, df[:,"n_output"])]) # index 5, SELECTED
-lv_u = ClusteringFeature("lv_u", NMD(2), Function[(m,df) -> uniqueness(m, df[:,"output"]), (m,df) -> uniqueness(m, df[:,"n_output"])])
-
-clusteringfeatures = [ sl_d, jc_d, lv_d, sl_u, jc_u, lv_u ]
+include("features.jl")
 
 @enum ValidityGroup VV VE EE
 
@@ -49,25 +17,19 @@ struct ClusteringSummarization <: BoundaryCandidateSummarization
     rounds::Integer
     expdir::AbstractString
     VGs::Tuple{Vararg{ValidityGroup}}
-    usecache::Bool
     highdiv::Bool
 
     #TODO make sure to convert df into "String only".
-    function ClusteringSummarization(df::DataFrame, sutname, features, rounds=1, expdir="", VGs=instances(ValidityGroup), usecache=false, highdiv=false)
-        new(df, sutname, features, rounds, expdir, VGs, usecache, highdiv)
+    function ClusteringSummarization(df::DataFrame, sutname, features, rounds=1, expdir="", VGs=instances(ValidityGroup), highdiv=false)
+        new(df, sutname, features, rounds, expdir, VGs, highdiv)
     end
 
-    function ClusteringSummarization(expdir::AbstractString, sutname, features, rounds=1, VGs=instances(ValidityGroup), usecache=false, highdiv=false)
-        ClusteringSummarization(loadsummary(expdir), sutname, features, rounds, expdir, VGs, usecache, highdiv)
+    function ClusteringSummarization(expdir::AbstractString, sutname, features, rounds=1, VGs=instances(ValidityGroup), highdiv=false)
+        ClusteringSummarization(loadsummary(expdir), sutname, features, rounds, expdir, VGs, highdiv)
     end
 end
 
 abstract type BoundaryResult end
-
-struct ClusteringResult <: BoundaryResult
-    df::DataFrame
-    silhouettescore::Float64
-end
 
 struct BoundarySummary{R<:BoundaryResult}
     results::Dict{ValidityGroup,R}
@@ -111,83 +73,4 @@ function reduce_to_shortest_entries_per_same_output(df::DataFrame)
     return df_new
 end
 
-function single_clustering(df_o::DataFrame, df::DataFrame, VG::ValidityGroup)
-    df_n = DataFrame(df)
-    df_n.clustering = fill!(Vector{String}(undef, nrow(df_n)), string(VG))
-    df_n.cluster = 1:nrow(df_n)  # individual clusters
-
-    if nrow(df_o) != nrow(df) # reduced, so classify all!
-        df_o.clustering = fill!(Vector{String}(undef, nrow(df_o)), string(VG))
-
-        d = Dict{String, Int}()
-        foreach(r -> d[string(r[:output], r[:n_output])] = r.cluster, eachrow(df_n))
-        df_o.cluster = map(r -> d[string(r[:output], r[:n_output])], eachrow(df_o))
-
-        df_n = df_o
-    end
-
-    @assert nrow(df_n) == nrow(df_o)
-
-    return ClusteringResult(df_n, 1.0) # fake score
-end
-
-empty_clustering(df::DataFrame) = ClusteringResult(hcat(df, DataFrame(clustering = String[], cluster = Int[])), 0.0) # fake score
-
-function regular_clustering(setup::ClusteringSummarization, df_o::DataFrame, df::DataFrame, VG::ValidityGroup)
-
-    if nrow(df) > MAX_CLUSTERING_SIZE    # still too many, do heuristic "Monte Carlo" Model
-        df_m = diverse_subset(setup, df, MAX_CLUSTERING_SIZE)   # TODO copy
-        return regular_clustering(setup, df_o, df_m, VG; usecache=false) # TODO copy
-    end
-
-    df_n = DataFrame(df)
-    df_n.clustering = fill!(Vector{String}(undef, nrow(df_n)), string(VG))
-
-    x_norm = feature_matrix(setup, df) # TODO copy
-    x_dists = xdists(setup, x_norm) # TODO copy
-
-    "start clustering..." |> print
-    bc, silh_score = bestclustering(setup, x_norm, x_dists) # TODO copy
-    " done." |> println
-
-    df_n.cluster = assignments(bc)
-
-    if nrow(df_n) != nrow(df_o) # if its reduced, classify all points
-        df_n = regular_classify(df_n, df_o, x_norm, bc.centers, setup.features) # TODO copy
-    end
-
-    @assert nrow(df_n) == nrow(df_o)
-
-    return df_n
-end
-
-function clustering(setup::ClusteringSummarization,
-                        VG::ValidityGroup)
-    df_s = filtervaliditygroup(Val{VG}, setup.df)
-
-    "number of BC's for $VG: $(nrow(df_s))" |> println
-
-    if isempty(df_s)
-        return empty_clustering(df_s) # extend by columns to match other clusterings
-    end
-
-    df_f = nrow(df_s) > MAX_CLUSTERING_SIZE ? reduce_to_shortest_entries_per_same_output(df_s) : df_s # if too many risks out of memory -> reduce outputs
-
-    return nrow(df_f) < 10 ? single_clustering(df_s, df_f, VG) : empty_clustering(DataFrame(Dict(map(x -> (x, String[]), names(df_s))))) # regular_clustering(setup, df_s, df_f, VG) # if too small for clustering, return indiv values as cluster
-end
-
-function summarize(setup::ClusteringSummarization, tofile::Bool=false)
-    summary = BoundarySummary{ClusteringResult}()
-    for VG in setup.VGs
-        singlesummary = clustering(setup, VG)
-        add(summary, VG, singlesummary)
-    end
-
-    if tofile
-        result_path = setup.expdir * "_clusterings"
-        mkpath(result_path)
-        CSV.write(joinpath(result_path, setup.sutname * "_clustering.csv"), asone(summary))
-    end
-
-    return summary
-end
+include("clustering.jl")

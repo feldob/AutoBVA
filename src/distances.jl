@@ -2,7 +2,13 @@
 
 struct Strlendist <: StringMetric end
 
+# TODO somewhat redundant here below, both needed?
 evaluate(::Strlendist, t₁::AbstractString, t₂::AbstractString) = Distances.evaluate(Euclidean(), length(t₁), length(t₂))
+
+function (dist::Strlendist)(s1, s2)
+    (s1 === missing) | (s2 === missing) && return missing
+    return abs(length(s2) - length(s1))
+end
 
 abstract type RelationalMetric end
 
