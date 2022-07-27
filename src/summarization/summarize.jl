@@ -36,45 +36,125 @@ lv_u = ClusteringFeature("lv_u", NMD(2), Function[(m,df) -> uniqueness(m, df[:,"
 
 clusteringfeatures = [ sl_d, jc_d, lv_d, sl_u, jc_u, lv_u ]
 
-@enum BoundaryType vv ve ee
+@enum ValidityGroup VV VE EE
 
 abstract type BoundaryCandidateSummarization end
 
 loadsummary(path) = CSV.read(path, DataFrame; type = String)
 
 struct ClusteringSummarization <: BoundaryCandidateSummarization
-    expdir::AbstractString
     df::DataFrame
     sutname::AbstractString
     features::AbstractVector{<:ClusteringFeature}
     rounds::Integer
-    bts::Tuple{Vararg{BoundaryType}}
+    expdir::AbstractString
+    VGs::Tuple{Vararg{ValidityGroup}}
     usecache::Bool
     highdiv::Bool
 
-    function ClusteringSummarization(expdir, df, sutname, features, rounds=1, bts=instances(BoundaryType), usecache=false, highdiv=false)
-        new(expdir, df, sutname, features, rounds, bts, usecache, highdiv)
+    #TODO make sure to convert df into "String only".
+    function ClusteringSummarization(df::DataFrame, sutname, features, rounds=1, expdir="", VGs=instances(ValidityGroup), usecache=false, highdiv=false)
+        new(df, sutname, features, rounds, expdir, VGs, usecache, highdiv)
     end
 
-    function ClusteringSummarization(expdir, sutname, features, rounds=1, bts=instances(BoundaryType), usecache=false, highdiv=false)
-        expfiles = filter(x -> startswith(x, "$(sutname)_") && endswith(x, "_all.csv") && length(collect(eachmatch(r"_", x))) == 1, readdir(setup.expdir))
-        @assert length(expfiles) == 1 "There shall be exactly one file for clustering."
-
-        df = loadsummary(joinpath(expdir, expfiles[1]))
-
-        ClusteringSummarization(expdir, df, sutname, features, rounds, bts, usecache, highdiv)
+    function ClusteringSummarization(expdir::AbstractString, sutname, features, rounds=1, VGs=instances(ValidityGroup), usecache=false, highdiv=false)
+        ClusteringSummarization(loadsummary(expdir), sutname, features, rounds, expdir, VGs, usecache, highdiv)
     end
 end
 
-function clusterings(setup::ClusteringSummarization,
-                        bt::BoundaryType)
-    #TODO implement clustering!
-    return setup.df
+abstract type BoundarySummary end
+
+struct ClusteringSummary <: BoundarySummary
+    summaries::Dict{ValidityGroup,DataFrame}
+
+    ClusteringSummary() = new(Dict{ValidityGroup,DataFrame}())
 end
 
-function summarize(setup::ClusteringSummarization)
-    result_path = setup.expdir * "_clusterings"
-    mkpath(result_path)
-    df_c = vcat(map(bt -> clusterings(setup, bt), setup.bts)...)
-    CSV.write(joinpath(result_path, setup.sutname * "_clustering.csv"), df_c)
+add(cs::ClusteringSummary, VG::ValidityGroup, summary::DataFrame) = cs.summaries[VG] = summary
+asone(cs::ClusteringSummary) = vcat(collect(values(cs.summaries))...)
+
+filtervaliditygroup(::Type{Val{VV}}, df::DataFrame) = subset(df, :outputtype => ByRow(==("valid")), :n_outputtype => ByRow(==("valid")))
+filtervaliditygroup(::Type{Val{VE}}, df::DataFrame) = subset(df, :outputtype => ByRow(==("valid")), :n_outputtype => ByRow(==("error")))
+filtervaliditygroup(::Type{Val{EE}}, df::DataFrame) = subset(df, :outputtype => ByRow(==("error")), :n_outputtype => ByRow(==("error")))
+
+# reduces the frame to the shortest inputs that produce the same outputs (this might not be appropriate for all SUTS, but here it allows to reduce complexity).
+function reduce_to_shortest_entries_per_same_output(df::DataFrame)
+
+    args = names(df)[1:findfirst(x -> x == "output", names(df))-1]
+
+    local df_new
+
+    gdfs = groupby(df, [:output, :n_output])
+
+    "number of BC's after reduction (engage): $(length(gdfs))" |> println
+
+    for gdf in gdfs
+        df_sub = DataFrame(gdf)
+
+        df_sub.mini = map(r -> sum(length.(Tuple(r[args]))), eachrow(df_sub))
+        sort!(df_sub, :mini)
+        select!(df_sub, Not(:mini))
+
+        representative = df_sub[1:1,:]
+        if @isdefined(df_new)
+            df_new = representative
+        else
+            df_new = vcat(df_new, representative)
+        end
+    end
+
+    return df_new
+end
+
+function single_clustering(df_o::DataFrame, df::DataFrame, VG::ValidityGroup)
+    df_n = DataFrame(df)
+    df_n.clustering = fill!(Vector{String}(undef, nrow(df_n)), string(VG))
+    df_n.cluster = 1:nrow(df_n)  # individual clusters
+
+    if nrow(df_o) != nrow(df) # reduced, so classify all!
+        df_o.clustering = fill!(Vector{String}(undef, nrow(df_o)), string(VG))
+
+        d = Dict{String, Int}()
+        foreach(r -> d[string(r[:output], r[:n_output])] = r.cluster, eachrow(df_n))
+        df_o.cluster = map(r -> d[string(r[:output], r[:n_output])], eachrow(df_o))
+
+        df_n = df_o
+    end
+
+    @assert nrow(df_n) == nrow(df_o)
+
+    return df_n
+end
+
+empty_clustering(df::DataFrame) = hcat(df, DataFrame(clustering = String[], cluster = Int[]))
+
+function clustering(setup::ClusteringSummarization,
+                        VG::ValidityGroup)
+    df_s = filtervaliditygroup(Val{VG}, setup.df)
+
+    "number of BC's for $VG: $(nrow(df_s))" |> println
+
+    if isempty(df_s)
+        return empty_clustering(df_s) # extend by columns to match other clusterings
+    end
+
+    df_f = nrow(df_s) > MAX_CLUSTERING_SIZE ? reduce_to_shortest_entries_per_same_output(df_s) : df_s # if too many risks out of memory -> reduce outputs
+
+    return nrow(df_f) < 10 ? single_clustering(df_s, df_f, VG) : empty_clustering(DataFrame(Dict(map(x -> (x, String[]), names(df_s))))) # regular_clustering(setup.sutname, df_s, df_f, VG, setup.features, setup.rounds, setup.usecache, setup.highdiv) # if too small for clustering, return indiv values as cluster
+end
+
+function summarize(setup::ClusteringSummarization, tofile::Bool=false)
+    summary = ClusteringSummary()
+    for VG in setup.VGs
+        singlesummary = clustering(setup, VG)
+        add(summary, VG, singlesummary)
+    end
+
+    if tofile
+        result_path = setup.expdir * "_clusterings"
+        mkpath(result_path)
+        CSV.write(joinpath(result_path, setup.sutname * "_clustering.csv"), asone(summary))
+    end
+
+    return summary
 end

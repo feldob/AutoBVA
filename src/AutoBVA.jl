@@ -40,8 +40,10 @@ module AutoBVA
     #-------------Summarization-------------------------------#
     # summarize.jl
         ClusteringFeature, sl_d, jc_d, lv_d, sl_u, jc_u, lv_u,
-        ClusteringSummarization, summarize, loadsummary
+        ClusteringSummarization, summarize, loadsummary,
+        BoundarySummary, ClusteringSummary
 
+    global const MAX_CLUSTERING_SIZE = 1000
 
     include("cts.jl")
     include("sampling.jl")
