@@ -3,5 +3,5 @@
     setup = ClusteringSummarization("clustering_example.csv", "bytecount", ctfs)
     summary = summarize(setup)
 
-    @test summary isa ClusteringSummary
+    @test summary isa BoundarySummary
 end

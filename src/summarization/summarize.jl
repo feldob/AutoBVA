@@ -62,16 +62,21 @@ struct ClusteringSummarization <: BoundaryCandidateSummarization
     end
 end
 
-abstract type BoundarySummary end
+abstract type BoundaryResult end
 
-struct ClusteringSummary <: BoundarySummary
-    summaries::Dict{ValidityGroup,DataFrame}
-
-    ClusteringSummary() = new(Dict{ValidityGroup,DataFrame}())
+struct ClusteringResult <: BoundaryResult
+    df::DataFrame
+    silhouettescore::Float64
 end
 
-add(cs::ClusteringSummary, VG::ValidityGroup, summary::DataFrame) = cs.summaries[VG] = summary
-asone(cs::ClusteringSummary) = vcat(collect(values(cs.summaries))...)
+struct BoundarySummary{R<:BoundaryResult}
+    results::Dict{ValidityGroup,R}
+
+    BoundarySummary{R}() where R = new{R}(Dict{ValidityGroup,R}())
+end
+
+add(cs::BoundarySummary, VG::ValidityGroup, result::BoundaryResult) = cs.results[VG] = result
+asone(cs::BoundarySummary) = vcat(collect(map(r -> r.df, values(cs.results)))...)
 
 filtervaliditygroup(::Type{Val{VV}}, df::DataFrame) = subset(df, :outputtype => ByRow(==("valid")), :n_outputtype => ByRow(==("valid")))
 filtervaliditygroup(::Type{Val{VE}}, df::DataFrame) = subset(df, :outputtype => ByRow(==("valid")), :n_outputtype => ByRow(==("error")))
@@ -123,10 +128,38 @@ function single_clustering(df_o::DataFrame, df::DataFrame, VG::ValidityGroup)
 
     @assert nrow(df_n) == nrow(df_o)
 
-    return df_n
+    return ClusteringResult(df_n, 1.0) # fake score
 end
 
-empty_clustering(df::DataFrame) = hcat(df, DataFrame(clustering = String[], cluster = Int[]))
+empty_clustering(df::DataFrame) = ClusteringResult(hcat(df, DataFrame(clustering = String[], cluster = Int[])), 0.0) # fake score
+
+function regular_clustering(setup::ClusteringSummarization, df_o::DataFrame, df::DataFrame, VG::ValidityGroup)
+
+    if nrow(df) > MAX_CLUSTERING_SIZE    # still too many, do heuristic "Monte Carlo" Model
+        df_m = diverse_subset(setup, df, MAX_CLUSTERING_SIZE)   # TODO copy
+        return regular_clustering(setup, df_o, df_m, VG; usecache=false) # TODO copy
+    end
+
+    df_n = DataFrame(df)
+    df_n.clustering = fill!(Vector{String}(undef, nrow(df_n)), string(VG))
+
+    x_norm = feature_matrix(setup, df) # TODO copy
+    x_dists = xdists(setup, x_norm) # TODO copy
+
+    "start clustering..." |> print
+    bc, silh_score = bestclustering(setup, x_norm, x_dists) # TODO copy
+    " done." |> println
+
+    df_n.cluster = assignments(bc)
+
+    if nrow(df_n) != nrow(df_o) # if its reduced, classify all points
+        df_n = regular_classify(df_n, df_o, x_norm, bc.centers, setup.features) # TODO copy
+    end
+
+    @assert nrow(df_n) == nrow(df_o)
+
+    return df_n
+end
 
 function clustering(setup::ClusteringSummarization,
                         VG::ValidityGroup)
@@ -140,11 +173,11 @@ function clustering(setup::ClusteringSummarization,
 
     df_f = nrow(df_s) > MAX_CLUSTERING_SIZE ? reduce_to_shortest_entries_per_same_output(df_s) : df_s # if too many risks out of memory -> reduce outputs
 
-    return nrow(df_f) < 10 ? single_clustering(df_s, df_f, VG) : empty_clustering(DataFrame(Dict(map(x -> (x, String[]), names(df_s))))) # regular_clustering(setup.sutname, df_s, df_f, VG, setup.features, setup.rounds, setup.usecache, setup.highdiv) # if too small for clustering, return indiv values as cluster
+    return nrow(df_f) < 10 ? single_clustering(df_s, df_f, VG) : empty_clustering(DataFrame(Dict(map(x -> (x, String[]), names(df_s))))) # regular_clustering(setup, df_s, df_f, VG) # if too small for clustering, return indiv values as cluster
 end
 
 function summarize(setup::ClusteringSummarization, tofile::Bool=false)
-    summary = ClusteringSummary()
+    summary = BoundarySummary{ClusteringResult}()
     for VG in setup.VGs
         singlesummary = clustering(setup, VG)
         add(summary, VG, singlesummary)
