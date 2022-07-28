@@ -1,21 +1,21 @@
-struct ClusteringSummarization <: BoundaryCandidateSummarization
+struct ClusteringSetup <: BoundaryCandidateSummarization
     df::DataFrame
     sutname::AbstractString
     features::AbstractVector{<:ClusteringFeature}
     rounds::Integer
     expdir::AbstractString
     VGs::Tuple{Vararg{ValidityGroup}}
-    highdiv::Bool
+    qualvsdiv::Float64
 
     #TODO make sure to convert df into "String only".
-    function ClusteringSummarization(df::DataFrame, sutname, features, rounds=1, expdir="", VGs=instances(ValidityGroup), highdiv=false)
-        new(df, sutname, features, rounds, expdir, VGs, highdiv)
+    function ClusteringSetup(df::DataFrame, sutname, features, expdir=""; rounds=1, VGs=instances(ValidityGroup), qualvsdiv=1.0)
+        new(df, sutname, features, rounds, expdir, VGs, qualvsdiv)
     end
 
-    function ClusteringSummarization(dffile::AbstractString, sutname, features, rounds=1, VGs=instances(ValidityGroup), highdiv=false)
+    function ClusteringSetup(dffile::AbstractString, sutname, features; rounds=1, VGs=instances(ValidityGroup), qualvsdiv=1.0)
         expdir = dirname(abspath(dffile))
         expdir |> println
-        ClusteringSummarization(loadsummary(dffile), sutname, features, rounds, expdir, VGs, highdiv)
+        ClusteringSetup(loadsummary(dffile), sutname, features, expdir; VGs, rounds, qualvsdiv)
     end
 end
 
@@ -58,10 +58,11 @@ normalizerows(m) = normalizecolumns(m')'
 
 empty_clustering(df::DataFrame) = ClusteringResult(hcat(df, DataFrame(clustering = String[], cluster = Int[])), 0.0) # fake score
 
-function feature_matrix(setup::ClusteringSummarization, df::DataFrame)
+function feature_matrix(setup::ClusteringSetup, df::DataFrame)
     _nfeatures = sum(nfeatures.(setup.features))
     x = zeros(_nfeatures, nrow(df))
 
+    #TODO optimize to do colum-wise calculation
     "calculate feature matrix..." |> print
     currentidx = 1
     for feature in setup.features
@@ -123,11 +124,9 @@ function regular_classify(df_n::DataFrame, df_o::DataFrame, df_s::DataFrame, x, 
     return vcat(df_n, df_s)
 end
 
-highdiveval(m, f) = map(x -> x ≥ maximum(f) * .95, f) |> findlast
+function bestclustering(setup::ClusteringSetup, x::AbstractMatrix{Float64}, dists=pairwise(Euclidean(), x, dims=2))
 
-function bestclustering(setup::ClusteringSummarization, x::AbstractMatrix{Float64}, dists=pairwise(Euclidean(), x, dims=2))
-
-    winnerselect = setup.highdiv ? highdiveval : (m,f)->argmax(f)
+    winnerselect(m,f) = (map(x -> x ≥ maximum(f) * setup.qualvsdiv, f) |> findlast)
 
     cl_sizes = 2:10 # reasonable cluster size range
     best_RS = Vector(undef, length(cl_sizes))
@@ -161,7 +160,7 @@ function bestclustering(setup::ClusteringSummarization, x::AbstractMatrix{Float6
      return best_RS[winner_overall], best_fitnesses[winner_overall]
 end
 
-function diverse_subset(s::ClusteringSummarization, df::DataFrame, matrix_size::Integer)
+function diverse_subset(s::ClusteringSetup, df::DataFrame, matrix_size::Integer)
 
     df = df[sample(1:size(df,1), size(df,1), replace=false),:]  # shulle content to maximize spread in each round
 
@@ -188,7 +187,7 @@ function diverse_subset(s::ClusteringSummarization, df::DataFrame, matrix_size::
 end
 
 
-function regular_clustering(setup::ClusteringSummarization, df_o::DataFrame, df::DataFrame, VG::ValidityGroup)
+function regular_clustering(setup::ClusteringSetup, df_o::DataFrame, df::DataFrame, VG::ValidityGroup)
 
     if nrow(df) > MAX_CLUSTERING_SIZE    # still too many, do heuristic "Monte Carlo" Model
         df_m = diverse_subset(setup, df, MAX_CLUSTERING_SIZE)
@@ -216,7 +215,7 @@ function regular_clustering(setup::ClusteringSummarization, df_o::DataFrame, df:
     return ClusteringResult(df_n, silh_score)
 end
 
-function clustering(setup::ClusteringSummarization,
+function clustering(setup::ClusteringSetup,
                         VG::ValidityGroup)
     df_s = filtervaliditygroup(Val{VG}, setup.df)
 
@@ -231,7 +230,7 @@ function clustering(setup::ClusteringSummarization,
     return nrow(df_f) < 10 ? single_clustering(df_s, df_f, VG) : regular_clustering(setup, df_s, df_f, VG) # if too small for clustering, return indiv values as cluster
 end
 
-function summarize(setup::ClusteringSummarization, tofile::Bool=false)
+function summarize(setup::ClusteringSetup, tofile::Bool=false)
     summary = BoundarySummary{ClusteringResult}()
     for VG in setup.VGs
         singlesummary = clustering(setup, VG)
@@ -246,9 +245,9 @@ function summarize(setup::ClusteringSummarization, tofile::Bool=false)
     return summary
 end
 
-function screen(s::ClusteringSummarization, tofile::Bool=false)
+function screen(s::ClusteringSetup, tofile::Bool=false)
 
-    feature_perms = collect(combinations(clusteringfeatures))
+    feature_perms = collect(combinations(s.features))
     feature_perms = filter(x -> length(x) > 1, feature_perms) # combine at least 2 features!
 
     df_scores = DataFrame(id = String[], score = Float32[], nclust = Int8[])
@@ -258,7 +257,7 @@ function screen(s::ClusteringSummarization, tofile::Bool=false)
         expid_s = join(id.(feature_perm), "-")
         expid_s |> println
 
-        setup_perm = ClusteringSummarization(s.df, "$(s.sutname)_$(expid_s)", feature_perm, s.rounds, expdir, s.VGs, s.highdiv)
+        setup_perm = ClusteringSetup(s.df, "$(s.sutname)_$(expid_s)", feature_perm, expdir; rounds=s.rounds, VGs=s.VGs, qualvsdiv=s.qualvsdiv)
         summary = summarize(setup_perm, tofile)
 
         res = result(summary, s.VGs[1]) #TODO assumes that only one is run here.

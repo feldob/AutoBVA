@@ -1,6 +1,6 @@
 # Compatible Type Sampling (CTS) is a sampling feature that allows to cover predefined subspaces more efficiently. Instead of covering only large numbers in Int64, more often smaller numbers are selected. It requires the definition of the compatibletypes implementation for each supported type.
 
-concreteargtype(dt::Type) = isconcretetype(dt) ? dt : throw(InexactError(:type, dt,"must add concreteargtype impl for type $dt"))
+concreteargtype(dt::Type) = isconcretetype(dt) ? dt : throw(InexactError(typeof(dt), dt,"must add concreteargtype impl for type $dt"))
 concreteargtype(::Type{Integer}) = Int128
 concreteargtype(::Type{Signed}) = Int128
 concreteargtype(::Type{Unsigned}) = UInt128

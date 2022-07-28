@@ -11,7 +11,7 @@ module AutoBVA
         Clustering, # summarize.jl
         Statistics, # summarize.jl -> mean
         Combinatorics, # clustering.jl -> combinations
-        CSV # summarize.jl
+        CSV # summarize.jl, experimentsummary.jl
 
 
     # cts.jl
@@ -44,9 +44,13 @@ module AutoBVA
     #-------------Summarization-------------------------------#
     # summarize.jl
         ClusteringFeature, sl_d, jc_d, lv_d, sl_u, jc_u, lv_u,
-        ClusteringSummarization, summarize, screen, loadsummary,
+        ClusteringSetup, summarize, screen, loadsummary,
         BoundarySummary, ValidityGroup, VV, VE, EE,
-        clusterframes, numclusters, silhouettescore, result
+        clusterframes, numclusters, silhouettescore, result,
+        ALL_BVA_CLUSTERING_FEATURES,
+
+    # experimentsummary.jl
+    singlefilesummary
 
     global const MAX_CLUSTERING_SIZE = 1000
 
@@ -59,6 +63,7 @@ module AutoBVA
     include("detection/nextboundary.jl")
     include("detection/bbo.jl")
 
+    include("summarization/experimentsummary.jl")
     include("summarization/summarize.jl")
 
 end # module

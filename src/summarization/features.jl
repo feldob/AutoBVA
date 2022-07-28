@@ -30,4 +30,4 @@ sl_u = ClusteringFeature("sl_u", Strlendist(), Function[(m,df) -> uniqueness(m, 
 jc_u = ClusteringFeature("jc_u", StringDistances.Overlap(2), Function[(m,df) -> uniqueness(m, df[:,"output"]), (m,df) -> uniqueness(m, df[:,"n_output"])]) # index 5, SELECTED
 lv_u = ClusteringFeature("lv_u", NMD(2), Function[(m,df) -> uniqueness(m, df[:,"output"]), (m,df) -> uniqueness(m, df[:,"n_output"])])
 
-clusteringfeatures = [ sl_d, jc_d, lv_d, sl_u, jc_u, lv_u ]
+global const ALL_BVA_CLUSTERING_FEATURES = [ sl_d, jc_d, lv_d, sl_u, jc_u, lv_u ]
