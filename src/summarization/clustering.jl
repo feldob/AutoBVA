@@ -171,9 +171,9 @@ function regular_clustering(setup::ClusteringSetup, df_o::DataFrame, df::DataFra
     x_norm = feature_matrix(setup, df)
     x_dists = pairwise(Euclidean(), x_norm, dims=2)
 
-    "start clustering..." |> print
+    "start clustering..." |> println
     bc, silh_score = bestclustering(setup, x_norm, x_dists)
-    " done." |> println
+    "...done." |> println
 
     df_n.cluster = assignments(bc)
 
