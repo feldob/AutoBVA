@@ -58,14 +58,15 @@ normalizerows(m) = normalizecolumns(m')'
 
 empty_clustering(df::DataFrame) = ClusteringResult(hcat(df, DataFrame(clustering = String[], cluster = Int[])), 0.0) # fake score
 
-function feature_matrix(setup::ClusteringSetup, df::DataFrame)
-    _nfeatures = sum(nfeatures.(setup.features))
+function feature_matrix(features::Vector{ClusteringFeature}, df::DataFrame, df_ref::DataFrame=df)
+    _nfeatures = sum(nfeatures.(features))
     x = zeros(_nfeatures, nrow(df))
 
+    #TODO df might have to be cut into chunks to make this manageable (100 or 1000 or so)
     "calculate feature matrix..." |> print
     currentidx = 1
-    for feature in setup.features
-        res = call(feature, df)
+    for feature in features
+        res = call(feature, df, df_ref)
         for idx in eachindex(res)
             x[currentidx,:] = res[idx]
             currentidx += 1
@@ -78,49 +79,18 @@ function feature_matrix(setup::ClusteringSetup, df::DataFrame)
     return normalizerows(x)
 end
 
+feature_matrix(setup::ClusteringSetup, df::DataFrame) = feature_matrix(setup.features, df)
+
 # classify according to nearest cluster center
-# FIXME currently does not use clfs as features, but is manually set. reason: rowwise calculation of feature is not suitable for uniqueness, and must therefore be adjusted to take the row as first param and the dataframe of existing data as second.
 function regular_classify(df_n::DataFrame, df_o::DataFrame, df_s::DataFrame, x, cluster_centers, features)::DataFrame
     df_s.clustering = fill!(Vector{String}(undef, nrow(df_s)), df_n[1,:clustering])   
-    df_s.cluster = fill!(Vector{Int}(undef, nrow(df_s)), 0) # empty init
-
-    mins, maxs = minimum(x, dims=2), maximum(x, dims=2)
-    span = (maxs .- mins) .+ 1e-20
 
     "classification:"|> println
 
-    #_nfeatures = sum(nfeatures.(clfs))
+    x = feature_matrix(features, df_s, df_o)
 
-    counter = 0
-    for row in eachrow(df_s)
-        #TODO change interface of features to take in two vectors instead. and then return one vector.
-        #f = zeros(Float64, _nfeatures)
-        # currentidx = 1
-        # for clf in features
-        #     res = call(clf, row)
-        #     for idx in eachindex(res)
-        #         f[currentidx] = res[idx]
-        #         currentidx += 1
-        #     end
-        # end
-
-        # features are selected according to screening: [ sl_d, jc_d, jc_u ] in that order
-        f = zeros(Float64, 4)
-        f[1] = Strlendist()(row[:output], row[:n_output])
-        f[2] = StringDistances.Jaccard(2)(row[:output], row[:n_output])
-        f[3] = uniqueness(StringDistances.Jaccard(2), row[:output], df_o[!, :output])
-        f[4] = uniqueness(StringDistances.Jaccard(2), row[:n_output], df_o[!, :n_output])
-
-        f = (f .- mins) ./ span # normalize
-
-        cl_dists = [ euclidean(f, c) for c in eachcol(cluster_centers) ] # TODO bottleneck?
-        row[:cluster] = argmin(cl_dists)
-
-        counter += 1
-        if counter % 100 == 0
-            "$counter/$(nrow(df_s))" |> println
-        end
-    end
+    # shortest euclidean distance to center "wins" and defines the cluster per boundary candidate in df_s
+    df_s[:cluster] = map(bc -> argmin.(euclidean.(bc, cluster_centers)), eachcol(df_s))
 
     return vcat(df_n, df_s)
 end
