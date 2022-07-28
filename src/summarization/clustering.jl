@@ -62,7 +62,6 @@ function feature_matrix(setup::ClusteringSetup, df::DataFrame)
     _nfeatures = sum(nfeatures.(setup.features))
     x = zeros(_nfeatures, nrow(df))
 
-    #TODO optimize to do colum-wise calculation
     "calculate feature matrix..." |> print
     currentidx = 1
     for feature in setup.features
@@ -74,6 +73,8 @@ function feature_matrix(setup::ClusteringSetup, df::DataFrame)
     end
     " done." |> println
 
+    #FIXME potential normalization error further down the line, when calculating the cluster belongingness in "classify"...
+    # TODO possible solution is to add the extreme values for the dimensions up front as inputs to the feature-matrix calculation.
     return normalizerows(x)
 end
 
@@ -107,8 +108,8 @@ function regular_classify(df_n::DataFrame, df_o::DataFrame, df_s::DataFrame, x, 
         f = zeros(Float64, 4)
         f[1] = Strlendist()(row[:output], row[:n_output])
         f[2] = StringDistances.Jaccard(2)(row[:output], row[:n_output])
-        f[3] = uniqueness(StringDistances.Jaccard(2), row[:output], df_o[:, :output])
-        f[4] = uniqueness(StringDistances.Jaccard(2), row[:n_output], df_o[:, :n_output])
+        f[3] = uniqueness(StringDistances.Jaccard(2), row[:output], df_o[!, :output])
+        f[4] = uniqueness(StringDistances.Jaccard(2), row[:n_output], df_o[!, :n_output])
 
         f = (f .- mins) ./ span # normalize
 
@@ -162,7 +163,7 @@ end
 
 function diverse_subset(s::ClusteringSetup, df::DataFrame, matrix_size::Integer)
 
-    df = df[sample(1:size(df,1), size(df,1), replace=false),:]  # shulle content to maximize spread in each round
+    df = df[sample(1:size(df,1), size(df,1), replace=false),:]  # shuffle content to maximize spread in each round
 
     churn = div(matrix_size, 10)   # number of incrementally removed entries of low diversity
 

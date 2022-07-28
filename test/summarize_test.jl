@@ -9,5 +9,5 @@ end
 # TODO move to calling repo once working
 @testset "screening test" begin
     setup = ClusteringSetup("clustering_example.csv", "bytecount", ALL_BVA_CLUSTERING_FEATURES; rounds=1, VGs=(VV,))
-    screen(setup, false) # dont write to disk
+    screen(setup, true) # dont write to disk
 end
