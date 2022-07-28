@@ -19,8 +19,8 @@ function uniqueness(m, vector::AbstractVector{<:AbstractString})
     sum(uniq_pw, dims = 2)
 end
 
-uniqueness_left(m, df) = uniqueness(m, df[:,"output"])
-uniqueness_right(m, df) = uniqueness(m, df[:,"n_output"])
+uniqueness_left(m, df) = uniqueness(m, df[!,"output"])
+uniqueness_right(m, df) = uniqueness(m, df[!,"n_output"])
 
 function uniqueness(m, v::AbstractString, vs::AbstractVector{<:AbstractString})
     return sum(x -> m(x,v), vs)
