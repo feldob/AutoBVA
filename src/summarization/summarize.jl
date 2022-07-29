@@ -31,12 +31,11 @@ function reduce_to_shortest_entries_per_same_output(df::DataFrame)
 
     args = names(df)[1:findfirst(x -> x == "output", names(df))-1]
 
-    local df_new
-
     gdfs = groupby(df, [:output, :n_output])
 
     "number of BC's after reduction (engage): $(length(gdfs))" |> println
 
+    local df_new
     for gdf in gdfs
         df_sub = DataFrame(gdf)
 
@@ -46,9 +45,9 @@ function reduce_to_shortest_entries_per_same_output(df::DataFrame)
 
         representative = df_sub[1:1,:]
         if @isdefined(df_new)
-            df_new = representative
-        else
             df_new = vcat(df_new, representative)
+        else
+            df_new = representative
         end
     end
 

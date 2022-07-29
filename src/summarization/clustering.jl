@@ -48,8 +48,7 @@ function single_clustering(df_o::DataFrame, df::DataFrame, VG::ValidityGroup)
     return ClusteringResult(df_n, 1.0) # fake score
 end
 
-function normalizecolumns(m)
-    mins, maxs = minimum(m, dims=1), maximum(m, dims=1)
+function normalizecolumns(m, mins=minimum(m, dims=1), maxs=maximum(m, dims=1))
     span = (maxs .- mins) .+ 1e-20
     (m .- mins) ./ span
 end
@@ -75,14 +74,15 @@ function feature_matrix(features::Vector{ClusteringFeature}, df::DataFrame, df_r
     " done." |> println
 
     #FIXME potential normalization error further down the line, when calculating the cluster belongingness in "classify"...
-    # TODO possible solution is to add the extreme values for the dimensions up front as inputs to the feature-matrix calculation.
+    # TODO solution would be to pass on the original extreme values here and use them in the classification calculation instead of the extremes there
     return normalizerows(x)
 end
 
 feature_matrix(setup::ClusteringSetup, df::DataFrame) = feature_matrix(setup.features, df)
 
 # classify according to nearest cluster center
-function regular_classify(df_n::DataFrame, df_o::DataFrame, df_s::DataFrame, x, cluster_centers, features)::DataFrame
+function regular_classify(df_n::DataFrame, df_o::DataFrame, cluster_centers, features)::DataFrame
+    df_s::DataFrame=nonincluded(df_n, df_o)
     df_s.clustering = fill!(Vector{String}(undef, nrow(df_s)), df_n[1,:clustering])   
 
     "classification:"|> println
@@ -90,7 +90,7 @@ function regular_classify(df_n::DataFrame, df_o::DataFrame, df_s::DataFrame, x, 
     x = feature_matrix(features, df_s, df_o)
 
     # shortest euclidean distance to center "wins" and defines the cluster per boundary candidate in df_s
-    df_s[:cluster] = map(bc -> argmin.(euclidean.(bc, cluster_centers)), eachcol(df_s))
+    df_s[!,:cluster] = map(bc -> argmin.(euclidean.(bc, cluster_centers)), eachcol(x))
 
     return vcat(df_n, df_s)
 end
@@ -157,6 +157,23 @@ function diverse_subset(s::ClusteringSetup, df::DataFrame, matrix_size::Integer)
     return df_res
 end
 
+function nonincluded(df_n::DataFrame, df_o::DataFrame)
+
+    df_n_plain = df_n[:, 1:end-3] # remove all clustering entries (back to original)
+
+    model_rows = Set{DataFrameRow}()
+    foreach(r -> push!(model_rows, r), eachrow(df_n_plain)) # set of existing ones for lookup
+
+    df_o_plain = df_o[:,Not(:count)]
+    remaining_rows = Set{Int}()
+    foreach(e -> e[2] ∉ model_rows ? push!(remaining_rows, e[1]) : nothing, enumerate(eachrow(df_o_plain)))
+
+    df_r = df_o[sort(collect(remaining_rows)),:]
+
+    @assert nrow(df_r) + nrow(df_n) == nrow(df_o)
+
+    return df_r
+end
 
 function regular_clustering(setup::ClusteringSetup, df_o::DataFrame, df::DataFrame, VG::ValidityGroup)
 
@@ -178,7 +195,7 @@ function regular_clustering(setup::ClusteringSetup, df_o::DataFrame, df::DataFra
     df_n.cluster = assignments(bc)
 
     if nrow(df_n) != nrow(df_o) # if its reduced, classify all points
-        df_n = regular_classify(df_n, df_o, x_norm, bc.centers, setup.features)
+        df_n = regular_classify(df_n, df_o, bc.centers, setup.features)
     end
 
     @assert nrow(df_n) == nrow(df_o)
@@ -216,7 +233,7 @@ function summarize(setup::ClusteringSetup; wtd::Bool=false)
     return summary
 end
 
-function screen(s::ClusteringSetup, wtd::Bool=false)
+function screen(s::ClusteringSetup; wtd::Bool=false)
 
     feature_perms = collect(combinations(s.features))
     feature_perms = filter(x -> length(x) > 1, feature_perms) # combine at least 2 features!
