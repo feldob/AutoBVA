@@ -201,14 +201,14 @@ function clustering(setup::ClusteringSetup,
     return nrow(df_f) < 10 ? single_clustering(df_s, df_f, VG) : regular_clustering(setup, df_s, df_f, VG) # if too small for clustering, return indiv values as cluster
 end
 
-function summarize(setup::ClusteringSetup, tofile::Bool=false)
+function summarize(setup::ClusteringSetup; wtd::Bool=false)
     summary = BoundarySummary{ClusteringResult}()
     for VG in setup.VGs
         singlesummary = clustering(setup, VG)
         add(summary, VG, singlesummary)
     end
 
-    if tofile
+    if wtd
         mkpath(setup.expdir)
         CSV.write(joinpath(setup.expdir, setup.sutname * "_clustering.csv"), asone(summary))
     end
@@ -216,20 +216,20 @@ function summarize(setup::ClusteringSetup, tofile::Bool=false)
     return summary
 end
 
-function screen(s::ClusteringSetup, tofile::Bool=false)
+function screen(s::ClusteringSetup, wtd::Bool=false)
 
     feature_perms = collect(combinations(s.features))
     feature_perms = filter(x -> length(x) > 1, feature_perms) # combine at least 2 features!
 
     df_scores = DataFrame(id = String[], score = Float32[], nclust = Int8[])
 
-    expdir = joinpath(s.expdir, "screening")
+    expdir = joinpath(s.expdir, "clustering_screening")
     for feature_perm in feature_perms
         expid_s = join(id.(feature_perm), "-")
         expid_s |> println
 
         setup_perm = ClusteringSetup(s.df, "$(s.sutname)_$(expid_s)", feature_perm, expdir; rounds=s.rounds, VGs=s.VGs, qualvsdiv=s.qualvsdiv)
-        summary = summarize(setup_perm, tofile)
+        summary = summarize(setup_perm; wtd)
 
         res = result(summary, s.VGs[1]) #TODO assumes that only one is run here.
         silhouette_score = silhouettescore(res)
@@ -238,7 +238,7 @@ function screen(s::ClusteringSetup, tofile::Bool=false)
 
     sort!(df_scores, [:score, :nclust])
 
-    if tofile
+    if wtd
         CSV.write(joinpath(expdir, "$(s.sutname)_clustering_scores.csv"), df_scores)
     end
 
