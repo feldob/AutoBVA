@@ -23,8 +23,12 @@ add(cs::BoundarySummary, VG::ValidityGroup, result::BoundaryResult) = cs.results
 asone(cs::BoundarySummary) = vcat(collect(map(r -> r.df, values(cs.results)))...)
 
 filtervaliditygroup(::Type{Val{VV}}, df::DataFrame) = subset(df, :outputtype => ByRow(==("valid")), :n_outputtype => ByRow(==("valid")))
-filtervaliditygroup(::Type{Val{VE}}, df::DataFrame) = subset(df, :outputtype => ByRow(==("valid")), :n_outputtype => ByRow(==("error")))
 filtervaliditygroup(::Type{Val{EE}}, df::DataFrame) = subset(df, :outputtype => ByRow(==("error")), :n_outputtype => ByRow(==("error")))
+function filtervaliditygroup(::Type{Val{VE}}, df::DataFrame)
+    left = subset(df, :outputtype => ByRow(==("valid")), :n_outputtype => ByRow(==("error")))
+    right = subset(df, :outputtype => ByRow(==("error")), :n_outputtype => ByRow(==("valid")))
+    return vcat(left, right)
+end
 
 # reduces the frame to the shortest inputs that produce the same outputs (this might not be appropriate for all SUTS, but here it allows to reduce complexity).
 function reduce_to_shortest_entries_per_same_output(df::DataFrame)
