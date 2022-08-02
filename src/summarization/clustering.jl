@@ -179,21 +179,28 @@ function nonincluded(df_n::DataFrame, df_o::DataFrame)
     return df_r
 end
 
-function divide_by_popularity(df::DataFrame)
+function divide_by_popularity(df::DataFrame, cutoff=10_000)
     if typeof(df.count[1]) <: AbstractString
         df.count = parse.(Int, df.count)
     end
-    df_multiples = subset(df, :count => ByRow(>(1)))
-    df_singles = subset(df, :count => ByRow(==(1)))
-    return df_multiples, df_singles
+    popularity = 0
+    local df_multiples
+    while true
+        popularity += 1
+        df_multiples = subset(df, :count => ByRow(>(popularity)))
+        nrow(df_multiples) > cutoff || break
+    end
+
+    df_singles = subset(df, :count => ByRow(≤(popularity)))
+    return df_multiples, df_singles, popularity
 end
 
 #TODO unlikely, but at times, the number of multiples may be larger than MAX_CLUSTERING_SIZE, how to handle!?
 function regular_clustering(setup::ClusteringSetup, df_o::DataFrame, df::DataFrame, VG::ValidityGroup, max_cluster_size=MAX_CLUSTERING_SIZE)
 
     if nrow(df) > max_cluster_size # still too many
-        df_multiples, df_singles = divide_by_popularity(df)
-        "$(nrow(df_multiples)) with count > 1, and $(nrow(df_singles)) with count == 1." |> println
+        df_multiples, df_singles, pop = divide_by_popularity(df)
+        "$(nrow(df_multiples)) with count > $pop, and $(nrow(df_singles)) with count ≤ $pop." |> println
 
         if nrow(df_multiples) > max_cluster_size
             max_cluster_size = nrow(df_multiples)

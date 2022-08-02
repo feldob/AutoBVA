@@ -26,7 +26,7 @@ function summarize_per_sutname_time(expdir, sutname, time; wtd=false)
 end
 
 function singlefilesummary(expdir::String; wtd=false)
-    expfiles = filter(x -> endswith(x, ".csv") && x != "results.csv" && !endswith(x, "_all.csv"), readdir(expdir))
+    expfiles = filter(x -> isfile(x) && endswith(x, ".csv") && x != "results.csv" && !endswith(x, "_all.csv"), readdir(expdir))
     sutnames = unique(map(x -> split(x, "_")[1], expfiles))
     algs = unique(map(x -> split(x, "_")[3], expfiles))
     times = unique(map(x -> split(x, "_")[6], expfiles))
