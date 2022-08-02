@@ -66,10 +66,10 @@ function feature_matrix(features::Vector{ClusteringFeature}, df::DataFrame, df_r
     "calculate feature matrix..." |> print
 
     @sync for (f_idx, attribute_idx) in enumerate(collect.(attribute_idxs))
-        @async () ->    begin
-                            res = call(features[f_idx], df, df_ref)
-                            foreach(idx -> x[attribute_idx[idx],:] = res[idx], eachindex(res))
-                        end
+        @async  begin
+                    res = call(features[f_idx], df, df_ref)
+                    foreach(idx -> x[attribute_idx[idx],:] = res[idx], eachindex(res))
+                end
     end
     " done." |> println
 
@@ -220,7 +220,7 @@ function regular_clustering(setup::ClusteringSetup, df_o::DataFrame, df::DataFra
 
     "start clustering..." |> println
     bc, silh_score = bestclustering(setup, x_norm, x_dists)
-    "...done." |> println
+    "...done. best size is $(counts(bc))" |> println
 
     df_n.cluster = assignments(bc)
 

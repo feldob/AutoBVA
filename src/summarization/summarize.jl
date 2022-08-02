@@ -8,7 +8,7 @@ include("features.jl")
 
 abstract type BoundaryCandidateSummarization end
 
-loadsummary(path) = CSV.read(path, DataFrame; type = String)
+loadsummary(path) = CSV.read(path, DataFrame; types = String)
 
 abstract type BoundaryResult end
 
