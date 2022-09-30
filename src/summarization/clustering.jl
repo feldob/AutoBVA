@@ -146,18 +146,30 @@ function diverse_subset(s::ClusteringSetup, df::DataFrame, matrix_size::Integer)
     "total size: $(nrow(df))" |> println
     df_remainder = df[matrix_size+1:end, :]                     # remaining entries to be tested to qualify
     while !isempty(df_remainder)
-        lastentry = min(churn, nrow(df_remainder))              # decide cutting point
+        "size res before merging: $(nrow(df_res))" |> println
+        if nrow(df_remainder) < 2 * churn
+            lastentry = nrow(df_remainder)
+        else
+            lastentry = min(churn, nrow(df_remainder))          # decide cutting point
+        end
+
         "size remainder: $(nrow(df_remainder)))" |> println
         df_next = df_remainder[1:lastentry, :]                  # get next batch
         df_remainder = df_remainder[lastentry+1:end, :]         # remove selection from remainder
 
         df_res = vcat(df_res, df_next)                          # combine the existing and new ones
         x_norm = feature_matrix(s, df_res)                      # calculate the diversity
-        divsum = sum(x_norm, dims = 2)[:,1]                     # calculate overall diversity per entry as sum
-        idx = partialsortperm(divsum, 1:3)                      # lowest div candidate indices
+        divsum = sum(x_norm, dims = 1)[1,:]                     # calculate overall diversity per entry as sum
+        if nrow(df_res) > matrix_size
+            lastentry = nrow(df_res) - matrix_size
+        end
+        idx = partialsortperm(divsum, 1:lastentry)              # lowest div candidate indices
         df_res = df_res[Not(idx),:]                             # remove entries that do not contribute to diversity
+        "size res after merging: $(nrow(df_res))" |> println
     end
 
+    "$(nrow(df_res)) == $(matrix_size)" |> println
+    @assert nrow(df_res) == matrix_size
     return df_res
 end
 
@@ -195,22 +207,22 @@ function divide_by_popularity(df::DataFrame, cutoff=10_000)
     return df_multiples, df_singles, popularity
 end
 
+#TODO introduce a much simpler approach by ordering entries using lexicographic and then picking.
 #TODO unlikely, but at times, the number of multiples may be larger than MAX_CLUSTERING_SIZE, how to handle!?
 function regular_clustering(setup::ClusteringSetup, df_o::DataFrame, df::DataFrame, VG::ValidityGroup, max_cluster_size=MAX_CLUSTERING_SIZE)
 
     if nrow(df) > max_cluster_size # still too many
-        df_multiples, df_singles, pop = divide_by_popularity(df)
-        "$(nrow(df_multiples)) with count > $pop, and $(nrow(df_singles)) with count ≤ $pop." |> println
+        # diversity based subselection
+        df_m = diverse_subset(setup, df, max_cluster_size)
 
-        if nrow(df_multiples) > max_cluster_size
-            max_cluster_size = nrow(df_multiples)
-            df_m = df_multiples
-        else
-            df_m = vcat(df_multiples, diverse_subset(setup, df_singles, max_cluster_size - nrow(df_multiples)))
-        end
+        # random subselection
+        #df_m = df[sample(1:size(df,1), size(df,1), replace=false),:]
+        #df_m = delete!(df_m, collect(max_cluster_size+1:nrow(df)))
 
         return regular_clustering(setup, df_o, df_m, VG, max_cluster_size)
     end
+
+
 
     df_n = DataFrame(df)
     df_n.clustering = fill!(Vector{String}(undef, nrow(df_n)), string(VG))

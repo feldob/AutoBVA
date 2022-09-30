@@ -13,11 +13,17 @@ struct SUT{T}
     function SUT(name::String, sut::Function)
         @assert methods(sut).ms |> length == 1 "The SUT is not unique, make sure to use a unique identifier or use a lambda to pass it on."
         @assert methods(sut).ms[1].nargs > 1 "The SUT has no arguments, and is therefore not suitable for explorative analysis."
+        @assert !haskey(SUTS, name) "You must use a unique SUT name, the name '$name' is already taken by a registered SUT."
 
+        #TODO add an impl that creates a lambda expression (clone) for the sut, so that each sut is unique.
         argtypes = (methods(sut).ms[1].sig.parameters[2:end]...,)
-        return new{Tuple{argtypes...}}(name, sut, argtypes, argnames(sut))
+        this = new{Tuple{argtypes...}}(name, sut, argtypes, argnames(sut))
+        SUTS[name] = this
+        return this
     end
 end
+
+global const SUTS = Dict{String, SUT}()
 
 name(sut::SUT) = sut.name
 sut(s::SUT) = s.sut
@@ -68,4 +74,4 @@ BituniformSampling(sut::SUT, cts::Bool=false) = BituniformSampling(argtypes(sut)
 # section with suts that come along
 
 myidentity_sut = SUT("identity", (x::Int8) -> x)
-tuple_sut = SUT("identity", (x::Tuple) -> 0.0)
+tuple_sut = SUT("tuple", (x::Tuple) -> 0.0)

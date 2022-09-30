@@ -27,7 +27,6 @@ end
 
 function singlefilesummary(expdir::String; wtd=false)
     expfiles = filter(x -> isfile(x) && endswith(x, ".csv") && x != "results.csv" && !endswith(x, "_all.csv"), readdir(expdir))
-    expfiles |> println
     sutnames = unique(map(x -> split(x, "_")[1], expfiles))
     algs = unique(map(x -> split(x, "_")[3], expfiles))
     times = unique(map(x -> split(x, "_")[6], expfiles))
@@ -35,15 +34,15 @@ function singlefilesummary(expdir::String; wtd=false)
     for sutname in sutnames
         for time in times
             for alg in algs
-                df = nothing
+                local df
                 expfiles_sut = map(x -> "$(joinpath(expdir, x))", filter(x -> startswith(x, "$(sutname)_") && contains(x, "_$(time)_") && contains(x, "_$(alg)_") && !endswith(x, "_all.csv"), readdir(expdir)))
                 for expfile in expfiles_sut
                     res_frame = CSV.read(expfile, DataFrame; types = String)
                     res_frame.count = parse.(Int64, res_frame.count)
-                    if isnothing(df)
-                        df = res_frame              # init
-                    else
+                    if @isdefined(df)
                         df = vcat(df, res_frame)    # append
+                    else
+                        df = res_frame              # init
                     end
 
                     gr = groupby(df, setdiff(names(df), ["count"]))

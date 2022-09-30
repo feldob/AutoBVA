@@ -8,6 +8,6 @@ end
 
 # TODO move to calling repo once working
 @testset "screening test" begin
-    setup = ClusteringSetup("ByteCount_all.csv", "bytecount", ALL_BVA_CLUSTERING_FEATURES; rounds=100, VGs=(VV,))
+    setup = ClusteringSetup("ByteCount_all.csv", "bytecount", ALL_BVA_CLUSTERING_FEATURES; rounds=1, VGs=(VV,))
     screen(setup; wtd=false) # dont write to disk
 end

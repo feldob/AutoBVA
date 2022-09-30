@@ -39,3 +39,19 @@ end
     DataFrames.groupby(df, [:a, :n_a])
     @test true
 end
+
+
+@testset "string search test" begin
+
+    doublestringsut = SUT("string double", (x::String) -> x * " " * x)
+
+    params = ParamsDict(:Method => :lns,
+                        :MaxTime => 1)
+    res = bboptimize(SUTProblem(doublestringsut); params...)
+
+    params = ParamsDict(:Method => :bcs,
+                        :MaxTime => 1)
+    res = bboptimize(SUTProblem(doublestringsut); params...)
+
+    @test true
+end
