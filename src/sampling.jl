@@ -1,3 +1,5 @@
+#TODO currently not supported to combine bitlog and uniform sampling for different dimensions
+
 abstract type SamplingStrategy{T} end
 
 abstract type NumericalSamplingStrategy <: SamplingStrategy{Number} end
@@ -32,10 +34,17 @@ maxbits(::Type{T}) where T <: Signed = sizeof(T) * 8 - 1
 bitlogsample(t::Type{<:Integer}) = rand(t) >> rand(0:maxbits(t))
 bitlogsample(::Type{Bool}) = rand(Bool)
 function bitlogsample(::Type{BigInt}, maxbits = 540)
-    maxbig = big"2"^rand(1:maxbits)
+    maxbig = bitlogsize(maxbits)
     rand((-maxbig):maxbig)
 end
 
 nextinput(rs::BituniformSampling) = tuple(map(i -> nextinput(rs, i), eachindex(rs.types))...)
 nextinput(rs::BituniformSampling, dim::Integer) = bitlogsample(rand(types(rs)[dim]))
 nextinput(::BituniformSampling, type::Type) = bitlogsample(type)
+
+abstract type StringSamplingStrategy <: SamplingStrategy{String} end
+
+struct ABCStringSamplingStrategy <: StringSamplingStrategy end
+
+# TODO mechanism to allow for multiple inputs
+nextinput(::ABCStringSamplingStrategy) = ((rand() < .01 ? "a" : "") * randstring('b':'c', rand(0:10)),)

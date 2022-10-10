@@ -11,6 +11,7 @@ module AutoBVA
         Clustering, # summarize.jl
         Statistics, # summarize.jl -> mean
         Combinatorics, # clustering.jl -> combinations
+        Random, # randstring
         CSV # summarize.jl, experimentsummary.jl
 
 
@@ -19,6 +20,7 @@ module AutoBVA
 
     # sampling.jl
         SamplingStrategy, UniformSampling, BituniformSampling, nextinput, types,
+        ABCStringSamplingStrategy, # string
 
     # distances.jl
         Strlendist, RelationalMetric, ProgramDerivative, evaluate,

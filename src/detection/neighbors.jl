@@ -2,7 +2,11 @@
 # ------Mutation Operator Tooling for Numbers-------------------
 #==============================================================#
 
+cond_shorten(s::String, l::Integer=1) = startswith(s, "a") ? s[2:end] : s
+cond_extend(s::String, l::Integer=1) = startswith(s, "a") ? s * "a" : s
+
 # defaults for Integers only
+mutationoperators(::Type{<:String}) = (cond_extend,cond_shorten)
 mutationoperators(::Type{<:Integer}) = (+,-)
 mutationoperators(::Integer) = mutationoperators(Integer)
 mutationoperators(sut::SUT) = map(mutationoperators, argtypes(sut))
@@ -15,6 +19,8 @@ function singlechangecopy(i::T, index::Int64, value)::T where {T <: Tuple}
             (updated..., i[index+1:length(i)]...) # after index
 end
 
+edgecase(operator::Function, value::String) = false
+
 function edgecase(operator::Function, value::Integer) # TODO get the comparison below right to ensure none inexact errors
     if operator == (-)
         return value == typemin(value)
@@ -25,11 +31,11 @@ function edgecase(operator::Function, value::Integer) # TODO get the comparison 
     end
 end
 
-function significant_neighborhood_boundariness(sut::SUT, metric::RelationalMetric, τ::Real, i::Tuple)
+function significant_neighborhood_boundariness(sut::SUT, metric::RelationalMetric, mos, τ::Real, i::Tuple)
     o = call(sut, i)
 
     for dim in 1:numargs(sut)
-        for mo in mutationoperators(sut, dim)
+        for mo in mos[dim]
             if edgecase(mo, i[dim])
                 continue
             end

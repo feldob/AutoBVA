@@ -40,16 +40,17 @@ end
     @test true
 end
 
-
 @testset "string search test" begin
 
-    doublestringsut = SUT("string double", (x::String) -> x * " " * x)
+    doublestringsut = SUT("string double", (x::String) -> x)
 
     params = ParamsDict(:Method => :lns,
+                        :SamplingStrategy => ABCStringSamplingStrategy(),
                         :MaxTime => 1)
     res = bboptimize(SUTProblem(doublestringsut); params...)
 
     params = ParamsDict(:Method => :bcs,
+                        :SamplingStrategy => ABCStringSamplingStrategy(),
                         :MaxTime => 1)
     res = bboptimize(SUTProblem(doublestringsut); params...)
 

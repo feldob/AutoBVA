@@ -25,20 +25,21 @@ function next(v::I, operand::Function, by::Integer)::I where {I<:Integer}
     try
         return next(v, operand, I(by))
     catch
-        return v # OBS! default back to original value, which should be taken as a signal of failure
+        return v # OBS! default back to original value, which should be taken as a sign of failure
     end
 end
 
 nextby_half(x::I) where I <: Integer = max(one(I), div(abs(x), 2))
 isatomic(x::Integer, T::DataType) = x ≤ one(T)
+isatomic(x::String, ::DataType) = isempty(x)
 
 @enum Direction begin
     forward
     backward
 end
 
-function oversteps(current, beta, operand::Function)
-    comp = operand == (+) ? (>) : (<)
+function oversteps(current, beta, mutationoperator::Function)
+    comp = mutationoperator == (+) ? (>) : (<)
     return !isnothing(beta) && comp(current, beta)
 end
 
@@ -74,6 +75,7 @@ sut(bs::BoundarySearch) = bs.sut
 stopcriterion(bs::BoundarySearch) = bs.sc
 call(bs::BoundarySearch, i::Tuple) = call(sut(bs), i)
 
+#TODO not sufficiently generic - must work for all operators and datatypes
 function oversteps(current, beta, operand::Function)
     comp = operand == (+) ? (>) : (<)
     return !isnothing(beta) && comp(current, beta)
@@ -86,9 +88,10 @@ function next_recursive(bs::NextBoundary,
                 operand::Function,
                 by=nextby_half(current[dim]),
                 counter::Int64=1,
-                direction::Direction=forward,
+                direction::Direction=forward,   # describes only orientation in search, not "reduction/extension"
                 beta=nothing)
 
+    "a: $counter" |> println
     incumbent = next(current, dim, operand, by)
     if oversteps(incumbent[dim], beta, operand)
         incumbent = singlechangecopy(incumbent, dim, beta)

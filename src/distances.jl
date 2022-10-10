@@ -18,6 +18,12 @@ end
 
 struct ProgramDerivative <: RelationalMetric end
 
+
+#TODO difference metric here is just assumed to be strlendist
+function evaluate(pd::ProgramDerivative, o₁::AbstractString, o₂::AbstractString, i₁::Tuple{Vararg{<:String}}, i₂::Tuple{Vararg{<:String}})
+    evaluate(pd, o₁, o₂, length.(i₁), length.(i₂))
+end
+
 # Default input distance: Euclidean
 # Default output distance: Strlendist
 # OBS that entering the same input twice results in a divide by zero in the input space (Inf or NaN as result, depending on output consistency).

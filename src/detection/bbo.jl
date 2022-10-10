@@ -2,14 +2,14 @@
 # --------------BBO OPTIMIZATION PROBLEM DEFINITION ------------
 #==============================================================#
 # the detection is not a global optimization problem, but uses the framework offered by bbo faking the optimization process while recording boundary candidates according to the chosen detection strategy (see below).
-
+# TODO refactor to have the mutationoperators not be a (set of) functions, but an object with forward and backward action
 struct SUTProblem{FS} <: OptimizationProblem{FS}
     sut::SUT
     mos::Tuple{Vararg{Tuple{Vararg{Function}}}}
 
     SUTProblem(name::String, sut::Function) = SUTProblem(SUT(name, sut))
     function SUTProblem(sut::SUT, mos=mutationoperators(sut))
-        @assert reduce(*, map(t -> t <: Real, argtypes(sut))) "BBO currently only supports real valued inputs."
+        #@assert reduce(*, map(t -> t <: Real, argtypes(sut))) "BBO currently only supports real valued inputs."
         return new{typeof(fake_fitness_scheme())}(sut, mos)
     end
 end
@@ -42,12 +42,17 @@ struct BoundaryCandidateDetectionSetup
         params[:TraceMode] = :silent
         evaluator = BlackBoxOptim.ProblemEvaluator(problem)
         cts = get(params, :CTS, false)
-        ss = get(params, :SamplingStrategy, UniformSampling)(sut(problem), cts) # as default, use uniform sampling suitable
+        # TODO change to have the instantiation happen outside in future (currently clunky cause of introduction of different input types)
+        SS = get(params, :SamplingStrategy, UniformSampling) # as default, use uniform sampling suitable
+        ss = SS isa SamplingStrategy ? SS : SS(sut(problem), cts)
+        #TODO add a check that the sampling strategy fits the input types
         BlackBoxOptim.fitness([0.0], evaluator) # initial fake result to not break BBO.
         bca = BoundaryCandidateArchive(sut(problem))
         return new(problem, ss, evaluator, bca)
     end
 end
+
+mutationoperators(bcds::BoundaryCandidateDetectionSetup) = bcds.problem.mos
 
 τ(::BoundaryCandidateDetectionSetup) = 0
 
@@ -61,9 +66,11 @@ problem(bcd::BoundaryCandidateDetector) = bcd.setup.problem
 sut(bcd::BoundaryCandidateDetector) = sut(problem(bcd))
 archive(bcd::BoundaryCandidateDetector) = bcd.setup.bca
 BlackBoxOptim.evaluator(bcd::BoundaryCandidateDetector) = bcd.setup.evaluator
+mutationoperators(bcd::BoundaryCandidateDetector) = mutationoperators(bcd.setup)
 
+# TODO adjust to forward the mutation operator too
 function significant_neighborhood_boundariness(bcd::BoundaryCandidateDetector, i::Tuple)
-    return significant_neighborhood_boundariness(sut(bcd), metric(bcd), τ(bcd), i)
+    return significant_neighborhood_boundariness(sut(bcd), metric(bcd), mutationoperators(bcd), τ(bcd), i)
 end
 
 # -------------------LNS -----------------
@@ -104,13 +111,17 @@ function BlackBoxOptim.step!(bcs::BoundaryCrossingSearch)
     i = nextinput(samplingstrategy(bcs))
     iₛ = string(i)
 
+
     if exists(archive(bcs), iₛ)
+        "exists $i" |> println
         add_known(archive(bcs), iₛ)
     elseif significant_neighborhood_boundariness(bcs, i)
+        "significant_neighbor $i" |> println
         add_new(archive(bcs), iₛ)
     else
+        "search $i" |> println
         dim = rand(1:numargs(sut(bcs)))
-        operator = rand(mutationoperators(i[dim]))
+        operator = rand(mutationoperators(bcs.setup)[dim])
         inext = next(nb(bcs), i, dim, operator)
         if inext != i
             inextₛ = string(inext)
