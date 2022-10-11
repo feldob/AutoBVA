@@ -43,6 +43,7 @@ module AutoBVA
         SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs, BCDOutput, rank_unique,
         operator, MutationOperator, ReductionOperator, ExtensionOperator,
         IntMutationOperators, IntSubtractionOperator, IntAdditionOperator,
+        BasicStringMutationOperators,
 
 
     #-------------Summarization-------------------------------#

@@ -1,16 +1,16 @@
 next(v::Bool, ::MutationOperator, ::Bool=true) = !v
-function next(v::I, mo::MutationOperator, times::I=one(I))::I where {I<:Integer}
+function next(v::I, mo::MutationOperator, times::I=1)::I where {I<:Integer}
     return apply(mo, v, times)
 end
 
-function next(t::T, dim::Int64, mo::MutationOperator, times=one(typeof(t[dim])))::T where {T <: Tuple}
+function next(t::T, dim::Int64, mo::MutationOperator, times::Integer=1)::T where {T <: Tuple}
     v = next(t[dim], mo, times)
     return singlechangecopy(t, dim, v)
 end
 
-function next(v::I, operand::MutationOperator, times::Integer)::I where {I<:Integer}
+function next(v::I, mo::MutationOperator, times::Integer)::I where {I<:Integer}
     try
-        return next(v, operand, I(times))
+        return next(v, mo, I(times))
     catch
         return v # OBS! default back to original value, which should be taken as a sign of failure
     end
@@ -55,20 +55,20 @@ sut(bs::BoundarySearch) = bs.sut
 stopcriterion(bs::BoundarySearch) = bs.sc
 call(bs::BoundarySearch, i::Tuple) = call(sut(bs), i)
 
-oversteps(current, beta, operand::MutationOperator) = !isnothing(beta) && !rightdirection(operand, current, beta)
+oversteps(current, beta, mo::MutationOperator) = !isnothing(beta) && !rightdirection(mo, current, beta)
 
 function next_recursive(bs::NextBoundary,
                 input::Tuple,
                 current::Tuple,
                 dim::Int64,
-                operand::MutationOperator,
-                times=one(current[dim]),
+                mo::MutationOperator,
+                times=1,
                 counter::Int64=1,
                 direction::Direction=forward,
                 beta=nothing)
 
-    incumbent = next(current, dim, operand, times)
-    if oversteps(incumbent[dim], beta, operand)
+    incumbent = next(current, dim, mo, times)
+    if oversteps(incumbent[dim], beta, mo)
         incumbent = singlechangecopy(incumbent, dim, beta)
         times = abs(-(current[dim], beta))
     end
@@ -78,11 +78,11 @@ function next_recursive(bs::NextBoundary,
         #"circuit breaker: $(incumbent[dim])." |> println
         return input
     else
-        outofbounds = !withinbounds(operand, current[dim], incumbent[dim])
+        outofbounds = !withinbounds(mo, current[dim], incumbent[dim])
         stopcondition = check(stopcriterion(bs), call(bs, current), call(bs, incumbent), current, incumbent) # version reducing sut calls, see end of file
 
         if outofbounds || stopcondition
-            atom = isatomic(times, typeof(input[dim]))
+            atom = isatomic(times)
             if stopcondition && atom # recursive stop criterion, TODO generalize for other datatypes, e.g. floats (where the min distance may be lower than "one")
                 #"successfully converged!: $(incumbent[dim])" |> println
                 return incumbent
@@ -97,14 +97,14 @@ function next_recursive(bs::NextBoundary,
             end
 
             beta = incumbent[dim] # cutting point for forward search
-            return next_recursive(bs, input, current, dim, operand, cut_half(times), counter + 1, backward, beta) # backtracking
+            return next_recursive(bs, input, current, dim, mo, cut_half(times), counter + 1, backward, beta) # backtracking
         else # forward below
             times_next = direction == backward ? cut_half(times) : 2 * times
-            return next_recursive(bs, input, incumbent, dim, operand, times_next, counter + 1, forward, beta)
+            return next_recursive(bs, input, incumbent, dim, mo, times_next, counter + 1, forward, beta)
         end
     end
 end
 
-function next(bs::NextBoundary, input::Tuple, dim::Int64, operand::MutationOperator)
-    return next_recursive(bs, input, input, dim, operand)
+function next(bs::NextBoundary, input::Tuple, dim::Int64, mo::MutationOperator)
+    return next_recursive(bs, input, input, dim, mo)
 end
