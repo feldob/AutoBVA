@@ -12,22 +12,22 @@ abstract type ReductionOperator{T} <: MutationOperator{T} end
 
 rightdirection(::ReductionOperator{Integer}, current::I1, next::I2) where {I1 <: Integer, I2 <: Integer} = current > next
 edgecase(::ReductionOperator{Integer}, value::Integer) = value == typemin(value)
+withinbounds(ro::ReductionOperator{Integer}, current::Integer, next::Integer) = rightdirection(ro, current, next) && next > typemin(current)
 
 abstract type ExtensionOperator{T} <: MutationOperator{T} end
 
 rightdirection(::ExtensionOperator{Integer}, current::I1, next::I2) where {I1 <: Integer, I2 <: Integer} = current < next
 edgecase(::ExtensionOperator{Integer}, value::Integer) = value == typemax(value)
+withinbounds(eo::ExtensionOperator{Integer}, current::Integer, next::Integer) = rightdirection(eo, current, next) && next < typemax(current)
 
 struct IntSubtractionOperator <: ReductionOperator{Integer} end
 apply(::IntSubtractionOperator, datum::Integer, times::Integer=one(datum)) = datum - times
-withinbounds(::ReductionOperator, current::Integer, next::Integer) = current > next && next > typemin(current)
 
 struct IntAdditionOperator <: ExtensionOperator{Integer} end
 apply(::IntAdditionOperator, datum::Integer, times::Integer=one(datum)) = datum + times
-withinbounds(::ExtensionOperator, current::Integer, next::Integer) = current < next && next < typemax(current)
 
 IntMutationOperators = [ IntSubtractionOperator(), IntAdditionOperator() ]
-edgecase(::ReductionOperator{String}, value::String) = value == ""
+
 
 struct StringShorteningOperator <: ReductionOperator{String} end
 function apply(::StringShorteningOperator, datum::String, times::Integer=1) #TODO have a more efficient implementation that gets smarter
@@ -36,6 +36,7 @@ function apply(::StringShorteningOperator, datum::String, times::Integer=1) #TOD
     end
     return datum
 end
+edgecase(::ReductionOperator{String}, value::String) = value == ""
 
 struct StringExtensionOperator <: ExtensionOperator{String} end
 function apply(::StringExtensionOperator, datum::String, times::Integer=1)
