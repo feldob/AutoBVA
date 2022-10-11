@@ -11,19 +11,16 @@ abstract type MutationOperator{T} end
 abstract type ReductionOperator{T} <: MutationOperator{T} end
 abstract type ExtensionOperator{T} <: MutationOperator{T} end
 
-rightdirection(::ReductionOperator, current::Integer, next::Integer) = current > next
-rightdirection(::ExtensionOperator, current::Integer, next::Integer) = current < next
+rightdirection(::ReductionOperator{Integer}, current::I1, next::I2) where {I1 <: Integer, I2 <: Integer} = current > next
+rightdirection(::ExtensionOperator{Integer}, current::I1, next::I2) where {I1 <: Integer, I2 <: Integer} = current < next
 
 struct IntSubtractionOperator <: ReductionOperator{Integer} end
-operator(::IntSubtractionOperator) = (-)
+apply(::IntSubtractionOperator, datum::Integer, times::Integer=one(datum)) = datum - times
 
 struct IntAdditionOperator <: ExtensionOperator{Integer} end
-operator(::IntAdditionOperator) = (+)
+apply(::IntAdditionOperator, datum::Integer, times::Integer=one(datum)) = datum + times
 
 IntMutationOperators = [ IntSubtractionOperator(), IntAdditionOperator()]
-
-# TODO how to create a good apply scheme!?
-#apply(::ReductionOperator, value::Integer, times=one(typeof(value))) = operator(, times)
 
 #cond_shorten(s::String, l::Integer=1) = startswith(s, "a") ? s[2:end] : s
 #cond_extend(s::String, l::Integer=1) = startswith(s, "a") ? s * "a" : s
@@ -53,7 +50,7 @@ function significant_neighborhood_boundariness(sut::SUT, metric::RelationalMetri
                 continue
             end
 
-            iₙ = singlechangecopy(i, dim, operator(mo)(i[dim], 1)) #TODO must refactor the interface to accept the calling of the operator as "apply" without extra parameters (if not desired).
+            iₙ = singlechangecopy(i, dim, apply(mo, i[dim]))
             oₙ = call(sut, iₙ)
             if evaluate(metric, stringified(o), string(value(oₙ)), i, iₙ) > τ # significant boundariness test
                 return true
@@ -77,7 +74,7 @@ function significant_neighbor(sut::SUT, mos::Vector{Vector{MutationOperator}}, m
                 continue
             end
 
-            iₙ = singlechangecopy(i, dim, operator(mo)(i[dim], 1))
+            iₙ = singlechangecopy(i, dim, apply(mo, i[dim]))
             oₙ = call(sut, iₙ)
             significanceₙ = evaluate(metric, stringified(o), stringified(oₙ), i, iₙ)
             if significanceₙ > τ && significanceₙ > significance

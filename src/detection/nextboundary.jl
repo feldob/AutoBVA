@@ -1,27 +1,22 @@
 next(v::Bool, ::MutationOperator, ::Bool=true) = !v
-function next(v::I, mo::MutationOperator, by::I=one(I))::I where {I<:Integer}
-    return operator(mo)(v, by)
+function next(v::I, mo::MutationOperator, times::I=one(I))::I where {I<:Integer}
+    return apply(mo, v, times)
 end
 
-function next(t::T, dim::Int64, mo::MutationOperator, by=one(typeof(t[dim])))::T where {T <: Tuple}
-    v = next(t[dim], mo, by)
+function next(t::T, dim::Int64, mo::MutationOperator, times=one(typeof(t[dim])))::T where {T <: Tuple}
+    v = next(t[dim], mo, times)
     return singlechangecopy(t, dim, v)
 end
 
-# OBS abstract function to be implemented
-function next(v, ::Function)
-    throws(DomainError(typeof(v), "next method not implemented"))
-end
-
-function next(v::I, operand::MutationOperator, by::Integer)::I where {I<:Integer}
+function next(v::I, operand::MutationOperator, times::Integer)::I where {I<:Integer}
     try
-        return next(v, operand, I(by))
+        return next(v, operand, I(times))
     catch
         return v # OBS! default back to original value, which should be taken as a sign of failure
     end
 end
 
-nextby_half(x::I) where I <: Integer = max(one(I), div(abs(x), 2))
+cut_half(x::I) where I <: Integer = max(one(I), div(abs(x), 2))
 
 @enum Direction begin
     forward
@@ -67,15 +62,15 @@ function next_recursive(bs::NextBoundary,
                 current::Tuple,
                 dim::Int64,
                 operand::MutationOperator,
-                by=nextby_half(current[dim]), # times=1,
+                times=one(current[dim]),
                 counter::Int64=1,
                 direction::Direction=forward,
                 beta=nothing)
 
-    incumbent = next(current, dim, operand, by)
+    incumbent = next(current, dim, operand, times)
     if oversteps(incumbent[dim], beta, operand)
         incumbent = singlechangecopy(incumbent, dim, beta)
-        by = abs(-(current[dim], beta))
+        times = abs(-(current[dim], beta))
     end
 
     #"REC($counter) current: $current, incumbent: $incumbent" |> println
@@ -87,7 +82,7 @@ function next_recursive(bs::NextBoundary,
         stopcondition = check(stopcriterion(bs), call(bs, current), call(bs, incumbent), current, incumbent) # version reducing sut calls, see end of file
 
         if outofbounds || stopcondition
-            atom = isatomic(by, typeof(input[dim]))
+            atom = isatomic(times, typeof(input[dim]))
             if stopcondition && atom # recursive stop criterion, TODO generalize for other datatypes, e.g. floats (where the min distance may be lower than "one")
                 #"successfully converged!: $(incumbent[dim])" |> println
                 return incumbent
@@ -102,10 +97,10 @@ function next_recursive(bs::NextBoundary,
             end
 
             beta = incumbent[dim] # cutting point for forward search
-            return next_recursive(bs, input, current, dim, operand, nextby_half(by), counter + 1, backward, beta) # backtracking
+            return next_recursive(bs, input, current, dim, operand, cut_half(times), counter + 1, backward, beta) # backtracking
         else # forward below
-            by_next = direction == backward ? nextby_half(by) : 2 * by
-            return next_recursive(bs, input, incumbent, dim, operand, by_next, counter + 1, forward, beta)
+            times_next = direction == backward ? cut_half(times) : 2 * times
+            return next_recursive(bs, input, incumbent, dim, operand, times_next, counter + 1, forward, beta)
         end
     end
 end
