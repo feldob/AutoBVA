@@ -2,27 +2,25 @@
 # ------Mutation Operator Tooling for Numbers-------------------
 #==============================================================#
 
-abstract type MutationOperator end
+# required for each supported datatype
+isatomic(x::Integer, T::DataType) = x ≤ one(T)
+isatomic(x::String, ::DataType) = isempty(x)
 
-struct ReductionOperator <: MutationOperator
-    type::DataType
-    operator::Function
-end
+abstract type MutationOperator{T} end
 
-struct ExtensionOperator <: MutationOperator
-    type::DataType
-    operator::Function
-end
-
-operator(mo::MutationOperator) = mo.operator
-
-IntReductionOperator = ReductionOperator(Integer, (-))
-IntExtensionOperator = ExtensionOperator(Integer, (+))
-
-IntMutationOperators = [ IntReductionOperator, IntExtensionOperator]
+abstract type ReductionOperator{T} <: MutationOperator{T} end
+abstract type ExtensionOperator{T} <: MutationOperator{T} end
 
 rightdirection(::ReductionOperator, current::Integer, next::Integer) = current > next
 rightdirection(::ExtensionOperator, current::Integer, next::Integer) = current < next
+
+struct IntSubtractionOperator <: ReductionOperator{Integer} end
+operator(::IntSubtractionOperator) = (-)
+
+struct IntAdditionOperator <: ExtensionOperator{Integer} end
+operator(::IntAdditionOperator) = (+)
+
+IntMutationOperators = [ IntSubtractionOperator(), IntAdditionOperator()]
 
 # TODO how to create a good apply scheme!?
 #apply(::ReductionOperator, value::Integer, times=one(typeof(value))) = operator(, times)

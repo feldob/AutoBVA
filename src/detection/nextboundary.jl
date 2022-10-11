@@ -22,8 +22,6 @@ function next(v::I, operand::MutationOperator, by::Integer)::I where {I<:Integer
 end
 
 nextby_half(x::I) where I <: Integer = max(one(I), div(abs(x), 2))
-isatomic(x::Integer, T::DataType) = x ≤ one(T)
-isatomic(x::String, ::DataType) = isempty(x)
 
 @enum Direction begin
     forward
@@ -69,7 +67,7 @@ function next_recursive(bs::NextBoundary,
                 current::Tuple,
                 dim::Int64,
                 operand::MutationOperator,
-                by=nextby_half(current[dim]),
+                by=nextby_half(current[dim]), # times=1,
                 counter::Int64=1,
                 direction::Direction=forward,
                 beta=nothing)

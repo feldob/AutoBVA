@@ -42,7 +42,7 @@ module AutoBVA
     # bbo.jl
         SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs, BCDOutput, rank_unique,
         operator, MutationOperator, ReductionOperator, ExtensionOperator,
-        IntMutationOperators, IntExtensionOperator, IntReductionOperator,
+        IntMutationOperators, IntSubtractionOperator, IntAdditionOperator,
 
 
     #-------------Summarization-------------------------------#
