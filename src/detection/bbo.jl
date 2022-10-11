@@ -3,13 +3,15 @@
 #==============================================================#
 # the detection is not a global optimization problem, but uses the framework offered by bbo faking the optimization process while recording boundary candidates according to the chosen detection strategy (see below).
 # TODO refactor to have the mutationoperators not be a (set of) functions, but an object with forward and backward action
+
 struct SUTProblem{FS} <: OptimizationProblem{FS}
     sut::SUT
-    mos::Tuple{Vararg{Tuple{Vararg{Function}}}}
+    mos::Vector{Vector{MutationOperator}}
 
-    SUTProblem(name::String, sut::Function) = SUTProblem(SUT(name, sut))
-    function SUTProblem(sut::SUT, mos=mutationoperators(sut))
+    SUTProblem(name::String, sut::Function, mos) = SUTProblem(SUT(name, sut), mos)
+    function SUTProblem(sut::SUT, mos)
         #@assert reduce(*, map(t -> t <: Real, argtypes(sut))) "BBO currently only supports real valued inputs."
+        @assert numargs(sut) == length(mos) "The mutation operator args must match the sut in number and type."
         return new{typeof(fake_fitness_scheme())}(sut, mos)
     end
 end
@@ -121,8 +123,8 @@ function BlackBoxOptim.step!(bcs::BoundaryCrossingSearch)
     else
         "search $i" |> println
         dim = rand(1:numargs(sut(bcs)))
-        operator = rand(mutationoperators(bcs.setup)[dim])
-        inext = next(nb(bcs), i, dim, operator)
+        mo = rand(mutationoperators(bcs)[dim])
+        inext = next(nb(bcs), i, dim, mo)
         if inext != i
             inextₛ = string(inext)
             if exists(archive(bcs), inextₛ)

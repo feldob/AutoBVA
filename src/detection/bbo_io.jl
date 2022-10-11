@@ -27,16 +27,18 @@ results(d::BoundaryCandidateDetector) = results(sut(d), d.setup.bca)
 
 mutable struct BCDOutput <: BlackBoxOptim.MethodOutput
     sut::SUT
+    mos::Vector{Vector{MutationOperator}}
     metric::RelationalMetric
     candidates::DataFrame
     τ::Real
 
-    BCDOutput(d::BoundaryCandidateDetector)= new(sut(d), metric(d), results(d), τ(d))
+    BCDOutput(d::BoundaryCandidateDetector)= new(sut(d), mutationoperators(d), metric(d), results(d), τ(d))
 end
 
 BlackBoxOptim.MethodOutput(d::BoundaryCandidateDetector) = BCDOutput(d)
 
 candidates(c::BCDOutput) = c.candidates
+mutationoperators(c::BCDOutput) = c.mos
 metric(c::BCDOutput) = c.metric
 sut(c::BCDOutput) = c.sut
 τ(c::BCDOutput) = c.τ
@@ -66,7 +68,7 @@ function append_outputs!(candidates::DataFrame, sut::SUT)
 end
 
 # OBS assumes that count is part of the inputs
-function append_significant_neighbor!(candidates::DataFrame, sut::SUT, metric::RelationalMetric, τ::Real; output::Bool=false)
+function append_significant_neighbor!(candidates::DataFrame, sut::SUT, mos, metric::RelationalMetric, τ::Real; output::Bool=false)
 
     metric_column = Vector{Float64}(undef, nrow(candidates))
     n_output = Vector{String}(undef, nrow(candidates))
@@ -80,7 +82,7 @@ function append_significant_neighbor!(candidates::DataFrame, sut::SUT, metric::R
 
     for (idx, candidate) in enumerate(eachrow(candidates))
         input = candidate[1:numargs(sut)]
-        iₙ, metric_column[idx], oₙ = significant_neighbor(sut, metric, τ, tuple(input...))
+        iₙ, metric_column[idx], oₙ = significant_neighbor(sut, mos, metric, τ, tuple(input...))
 
         n_output[idx] = string(value(oₙ))
         n_datatype[idx] = datatype(oₙ)
@@ -159,14 +161,14 @@ function merge_twins_for(df::DataFrame, sut::SUT)
     combine(DataFrames.groupby(df, fieldnames), :count => sum, renamecols=false)
 end
 
-function rank_unique(df::DataFrame, sut::SUT, metric::RelationalMetric, τ; output::Bool=false, tosort::Bool=true, incl_metric::Bool=false, filter::Bool=true)
+function rank_unique(df::DataFrame, sut::SUT, mos, metric::RelationalMetric, τ; output::Bool=false, tosort::Bool=true, incl_metric::Bool=false, filter::Bool=true)
 
     if output
         append_outputs!(df, sut)
     end
 
     if incl_metric
-        df = append_significant_neighbor!(df, sut, metric, τ; output)
+        df = append_significant_neighbor!(df, sut, mos, metric, τ; output)
         if filter
             filter!(r -> r.metric > 0, df)
         end
@@ -184,5 +186,5 @@ function rank_unique(df::DataFrame, sut::SUT, metric::RelationalMetric, τ; outp
 end
 
 function rank_unique(results::BCDOutput; output::Bool=false, tosort::Bool=true, incl_metric::Bool=false, filter::Bool=true)
-    rank_unique(candidates(results), sut(results), metric(results), τ(results); output, tosort, incl_metric, filter)
+    rank_unique(candidates(results), sut(results), mutationoperators(results), metric(results), τ(results); output, tosort, incl_metric, filter)
 end
