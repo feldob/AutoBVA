@@ -115,16 +115,16 @@ function BlackBoxOptim.step!(bcs::BoundaryCrossingSearch)
 
 
     if exists(archive(bcs), iₛ)
-        "exists $i" |> println
+        #"exists $i" |> println
         add_known(archive(bcs), iₛ)
     elseif significant_neighborhood_boundariness(bcs, i)
-        "significant_neighbor $i" |> println
+        #"significant_neighbor $i" |> println
         add_new(archive(bcs), iₛ)
     else
-        "search $i" |> println
+        #"search $i" |> println
         dim = rand(1:numargs(sut(bcs)))
         mo = rand(mutationoperators(bcs)[dim])
-        inext = next(nb(bcs), i, dim, mo)
+        inext = apply(nb(bcs), mo, i, dim)
         if inext != i
             inextₛ = string(inext)
             if exists(archive(bcs), inextₛ)

@@ -1,19 +1,12 @@
-next(v::Bool, ::MutationOperator, ::Bool=true) = !v
-function next(v::I, mo::MutationOperator, times::I=1)::I where {I<:Integer} # TODO must implement this for "String" - currently a bug! generalize with keeping the
-    return apply(mo, v, times)
-end
-
-function next(t::T, dim::Int64, mo::MutationOperator, times::Integer=1)::T where {T <: Tuple}
-    v = next(t[dim], mo, times)
-    return singlechangecopy(t, dim, v)
-end
-
-function next(v::I, mo::MutationOperator, times::Integer)::I where {I<:Integer}
+function apply(mo::MutationOperator, t::T, dim::Int64, times::Integer=1)::T where {T <: Tuple}
+    v = t[dim]
     try
-        return next(v, mo, I(times))
+        v = apply(mo, v, times)
     catch
-        return v # OBS! default back to original value, which should be taken as a sign of failure
+        # original value - sign of failure
     end
+
+    return singlechangecopy(t, dim, v)
 end
 
 cut_half(x::I) where I <: Integer = max(one(I), div(abs(x), 2))
@@ -67,14 +60,15 @@ function next_recursive(bs::NextBoundary,
                 direction::Direction=forward,
                 beta=nothing)
 
-    incumbent = next(current, dim, mo, times)
+    incumbent = apply(mo, current, dim, times)
     if oversteps(incumbent[dim], beta, mo)
         incumbent = singlechangecopy(incumbent, dim, beta)
         times = abs(-(current[dim], beta))
     end
 
     #"REC($counter) current: $current, incumbent: $incumbent" |> println
-    if counter > 120 # TODO change back to 120 if not working!!!
+    # TODO it is not so much the direct similarity of the neighboring points, but the fact that the similarity measures signal similarity! strlendist for instance could end up in an endless loop, even for strings of same length.
+    if counter > 120 || incumbent == current # TODO change back to 120 if not working!!!
         #"circuit breaker: $(incumbent[dim])." |> println
         return input
     else
@@ -105,6 +99,6 @@ function next_recursive(bs::NextBoundary,
     end
 end
 
-function next(bs::NextBoundary, input::Tuple, dim::Int64, mo::MutationOperator)
+function apply(bs::NextBoundary, mo::MutationOperator, input::Tuple, dim::Int64)
     return next_recursive(bs, input, input, dim, mo)
 end

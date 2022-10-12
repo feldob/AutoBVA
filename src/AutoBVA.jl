@@ -37,7 +37,7 @@ module AutoBVA
     # neighbors.jl
 
     # nextboundary.jl
-        next, NextBoundary, OutputDelta, OutputTypeDiff,
+        apply, next, NextBoundary, OutputDelta, OutputTypeDiff,
 
     # bbo.jl
         SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs, BCDOutput, rank_unique,
