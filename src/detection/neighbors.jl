@@ -2,29 +2,33 @@
 # ------Mutation Operator Tooling for Numbers-------------------
 #==============================================================#
 
-# required for each supported datatype
+# datatype specific that must be implemented
+#-------------------------------------------
 isatomic(x::Integer) = x ≤ 1
 isatomic(x::String) = isempty(x)
+
+# mutation operator specific that must be implemented
+#-------------------------------------------
 
 abstract type MutationOperator{T} end
 
 abstract type ReductionOperator{T} <: MutationOperator{T} end
 
-rightdirection(::ReductionOperator{Integer}, current::I1, next::I2) where {I1 <: Integer, I2 <: Integer} = current > next
+rightdirection(::ReductionOperator{Integer}, current::Integer, next::Integer) = current > next
 edgecase(::ReductionOperator{Integer}, value::Integer) = value == typemin(value)
-withinbounds(ro::ReductionOperator{Integer}, current::Integer, next::Integer) = rightdirection(ro, current, next) && next > typemin(current)
+withinbounds(ro::ReductionOperator{Integer}, current::Integer, next::Integer) = rightdirection(ro, current, next) && rightdirection(ro, next, typemin(current))
 
 abstract type ExtensionOperator{T} <: MutationOperator{T} end
 
-rightdirection(::ExtensionOperator{Integer}, current::I1, next::I2) where {I1 <: Integer, I2 <: Integer} = current < next
+rightdirection(::ExtensionOperator{Integer}, current::Integer, next::Integer) = current < next
 edgecase(::ExtensionOperator{Integer}, value::Integer) = value == typemax(value)
-withinbounds(eo::ExtensionOperator{Integer}, current::Integer, next::Integer) = rightdirection(eo, current, next) && next < typemax(current)
+withinbounds(eo::ExtensionOperator{Integer}, current::Integer, next::Integer) = rightdirection(eo, current, next) && rightdirection(eo, next, typemax(current))
 
 struct IntSubtractionOperator <: ReductionOperator{Integer} end
-apply(::IntSubtractionOperator, datum::Integer, times::Integer=one(datum)) = datum - times
+apply(::IntSubtractionOperator, datum::I, times::Integer=1) where {I <: Integer} = datum - I(times)
 
 struct IntAdditionOperator <: ExtensionOperator{Integer} end
-apply(::IntAdditionOperator, datum::Integer, times::Integer=one(datum)) = datum + times
+apply(::IntAdditionOperator, datum::I, times::Integer=1) where {I <: Integer} = datum + I(times)
 
 IntMutationOperators = [ IntSubtractionOperator(), IntAdditionOperator() ]
 

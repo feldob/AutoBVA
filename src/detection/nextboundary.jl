@@ -1,5 +1,5 @@
 next(v::Bool, ::MutationOperator, ::Bool=true) = !v
-function next(v::I, mo::MutationOperator, times::I=1)::I where {I<:Integer}
+function next(v::I, mo::MutationOperator, times::I=1)::I where {I<:Integer} # TODO must implement this for "String" - currently a bug! generalize with keeping the
     return apply(mo, v, times)
 end
 
