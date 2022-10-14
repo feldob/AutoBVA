@@ -73,7 +73,7 @@ function next_recursive(bs::NextBoundary,
         return input
     else
         outofbounds = !withinbounds(mo, current[dim], incumbent[dim])
-        stopcondition = check(stopcriterion(bs), call(bs, current), call(bs, incumbent), current, incumbent) # version reducing sut calls, see end of file
+        stopcondition = check(stopcriterion(bs), call(bs, current), call(bs, incumbent), current, incumbent)
 
         if outofbounds || stopcondition
             atom = isatomic(times)

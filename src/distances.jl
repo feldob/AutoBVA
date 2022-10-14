@@ -13,12 +13,14 @@ end
 abstract type RelationalMetric end
 
 function evaluate(r::RelationalMetric, ::AbstractString, ::AbstractString, ::Tuple{Vararg{<:Real}}, ::Tuple{Vararg{<:Real}})
-    throws(ArgumentError("method implementation for type $r missing and must be implemented."))
+    throws(ArgumentError("method implementation for type $(typeof(r)) missing and must be implemented."))
 end
 
 struct ProgramDerivative <: RelationalMetric end
 
-
+# OBS this is for strings only!
+#TODO in case of a mix of inputs of different types, this does not work.
+#TODO is strlendist really the right metric to choose here for inputs!? -> customize!?
 #TODO difference metric here is just assumed to be strlendist
 function evaluate(pd::ProgramDerivative, o₁::AbstractString, o₂::AbstractString, i₁::Tuple{Vararg{<:String}}, i₂::Tuple{Vararg{<:String}})
     evaluate(pd, o₁, o₂, length.(i₁), length.(i₂))

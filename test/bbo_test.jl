@@ -42,17 +42,19 @@ end
 
 @testset "string search test" begin
 
-    doublestringsut = SUT("string double", (x::String) -> x)
+    string_identity_sut = SUT("string identity", (x::String) -> x)
 
     params = ParamsDict(:Method => :lns,
-                        :SamplingStrategy => ABCStringSamplingStrategy(),
+                        :SamplingStrategy => ABCStringSampling(),
                         :MaxTime => 1)
-    res = bboptimize(SUTProblem(doublestringsut, [ BasicStringMutationOperators ]); params...)
+    res = bboptimize(SUTProblem(string_identity_sut, [ BasicStringMutationOperators ]); params...)
 
     params = ParamsDict(:Method => :bcs,
-                        :SamplingStrategy => ABCStringSamplingStrategy(),
+                        :SamplingStrategy => ABCStringSampling(),
                         :MaxTime => 1)
-    res = bboptimize(SUTProblem(doublestringsut, [ BasicStringMutationOperators ]); params...)
+    res = bboptimize(SUTProblem(string_identity_sut, [ BasicStringMutationOperators ]); params...)
+
+    ranked_candidates = rank_unique(res.method_output; output=true, incl_metric=true, filter=true, tosort=true)
 
     @test true
 end

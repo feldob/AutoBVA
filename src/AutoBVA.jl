@@ -14,48 +14,51 @@ module AutoBVA
         Random, # randstring
         CSV # summarize.jl, experimentsummary.jl
 
-
     # cts.jl
     export compatibletypes,
 
     # sampling.jl
-        SamplingStrategy, UniformSampling, BituniformSampling, nextinput, types,
-        ABCStringSamplingStrategy, # string
+    SamplingStrategy, nextinput, types,
 
     # distances.jl
-        Strlendist, RelationalMetric, ProgramDerivative, evaluate,
+    Strlendist, RelationalMetric, ProgramDerivative, evaluate,
 
     # sut.jl
-        SUT, name, argtypes, call, numargs,
-        OutputType, valid, error,
-        SUTOutput, datatype, outputtype, value, stringified,
-        myidentity_sut, tuple_sut, # example suts
+    SUT, name, argtypes, call, numargs,
+    OutputType, valid, error,
+    SUTOutput, datatype, outputtype, value, stringified,
+    myidentity_sut, tuple_sut, # example suts
 
     # boundarycandidates.jl
-        BoundaryCandidateArchive, sut, add, size,
+    BoundaryCandidateArchive, sut, add, size,
 
     # neighbors.jl
 
     # nextboundary.jl
-        apply, next, NextBoundary, OutputDelta, OutputTypeDiff,
+    apply, next, NextBoundary, OutputDelta, OutputTypeDiff,
 
     # bbo.jl
-        SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs, BCDOutput, rank_unique,
-        operator, MutationOperator, ReductionOperator, ExtensionOperator,
-        IntMutationOperators, IntSubtractionOperator, IntAdditionOperator,
-        BasicStringMutationOperators,
-
+    SUTProblem, LocalNeighborSearch, lns, BoundaryCrossingSearch, bcs, BCDOutput, rank_unique,
+    operator, MutationOperator, ReductionOperator, ExtensionOperator,
 
     #-------------Summarization-------------------------------#
     # summarize.jl
-        ClusteringFeature, sl_d, jc_d, lv_d, sl_u, jc_u, lv_u,
-        ClusteringSetup, summarize, screen, loadsummary,
-        BoundarySummary, ValidityGroup, VV, VE, EE,
-        clusterframes, numclusters, silhouettescore, result,
-        ALL_BVA_CLUSTERING_FEATURES,
+    ClusteringFeature, sl_d, jc_d, lv_d, sl_u, jc_u, lv_u,
+    ClusteringSetup, summarize, screen, loadsummary,
+    BoundarySummary, ValidityGroup, VV, VE, EE,
+    clusterframes, numclusters, silhouettescore, result,
+    ALL_BVA_CLUSTERING_FEATURES,
 
     # experimentsummary.jl
-    singlefilesummary
+    singlefilesummary,
+
+    # integer_input_extension.jl
+    UniformSampling, BituniformSampling,
+    IntMutationOperators, IntSubtractionOperator, IntAdditionOperator,
+
+    # string_input_extension.jl
+    ABCStringSampling,
+    BasicStringMutationOperators
 
     global const MAX_CLUSTERING_SIZE = 1000
 
@@ -70,5 +73,7 @@ module AutoBVA
 
     include("summarization/experimentsummary.jl")
     include("summarization/summarize.jl")
+    include("input_types/integer_input_extension.jl")
+    include("input_types/string_input_extension.jl")
 
 end # module
