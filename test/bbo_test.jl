@@ -56,5 +56,5 @@ end
 
     ranked_candidates = rank_unique(res.method_output; output=true, incl_metric=true, filter=true, tosort=true)
 
-    @test true
+    @test nrow(ranked_candidates) > 0
 end

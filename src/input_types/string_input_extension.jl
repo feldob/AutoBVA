@@ -1,6 +1,4 @@
-abstract type StringSamplingStrategy <: SamplingStrategy{String} end
-
-struct ABCStringSampling <: StringSamplingStrategy end
+struct ABCStringSampling <: SamplingStrategy{String} end
 
 nextinput(::ABCStringSampling) = ((rand() < .01 ? "a" : "") * randstring('b':'b', rand(0:10)),)
 

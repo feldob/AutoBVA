@@ -68,7 +68,7 @@ function next_recursive(bs::NextBoundary,
 
     #"REC($counter) current: $current, incumbent: $incumbent" |> println
     # TODO it is not so much the direct similarity of the neighboring points, but the fact that the similarity measures signal similarity! strlendist for instance could end up in an endless loop, even for strings of same length.
-    if counter > 120 || incumbent == current # TODO change back to 120 if not working!!!
+    if counter > 120 || incumbent == current # TODO when the direction and operator a change is not happening, assuming deterministic mutation, halt as no progress can be made.
         #"circuit breaker: $(incumbent[dim])." |> println
         return input
     else
