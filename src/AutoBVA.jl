@@ -58,7 +58,11 @@ module AutoBVA
 
     # string_input_extension.jl
     ABCStringSampling,
-    BasicStringMutationOperators
+    BasicStringMutationOperators,
+
+    # string_input_extension.jl
+    SomeArraySampling,
+    BasicArrayMutationOperators
 
     global const MAX_CLUSTERING_SIZE = 1000
 
@@ -75,5 +79,6 @@ module AutoBVA
     include("summarization/summarize.jl")
     include("input_types/integer_input_extension.jl")
     include("input_types/string_input_extension.jl")
+    include("input_types/array_input_extension.jl")
 
 end # module

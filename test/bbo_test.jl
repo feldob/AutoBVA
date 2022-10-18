@@ -58,3 +58,22 @@ end
 
     @test nrow(ranked_candidates) > 0
 end
+
+@testset "array example test" begin
+
+    array_append_sut = SUT("array append", (x::Vector, y::Vector) -> vcat(x, y))
+
+    params = ParamsDict(:Method => :lns,
+                        :SamplingStrategy => SomeArraySampling(),
+                        :MaxTime => 1)
+    res = bboptimize(SUTProblem(array_append_sut, fill(BasicArrayMutationOperators, 2)); params...)
+
+    params = ParamsDict(:Method => :bcs,
+                        :SamplingStrategy => SomeArraySampling(),
+                        :MaxTime => 1)
+    res = bboptimize(SUTProblem(array_append_sut, fill(BasicArrayMutationOperators, 2)); params...)
+
+    ranked_candidates = rank_unique(res.method_output; output=true, incl_metric=true, filter=true, tosort=true)
+
+    @test nrow(ranked_candidates) > 0
+end

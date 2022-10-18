@@ -10,8 +10,8 @@ struct SUTProblem{FS} <: OptimizationProblem{FS}
 
     SUTProblem(name::String, sut::Function, mos) = SUTProblem(SUT(name, sut), mos)
     function SUTProblem(sut::SUT, mos)
-        #@assert reduce(*, map(t -> t <: Real, argtypes(sut))) "BBO currently only supports real valued inputs."
         @assert numargs(sut) == length(mos) "The mutation operator args must match the sut in number and type."
+        # TODO add check that types in mos and sut match
         return new{typeof(fake_fitness_scheme())}(sut, mos)
     end
 end

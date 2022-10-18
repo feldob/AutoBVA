@@ -22,7 +22,7 @@ struct ProgramDerivative <: RelationalMetric end
 #TODO in case of a mix of inputs of different types, this does not work.
 #TODO is strlendist really the right metric to choose here for inputs!? -> customize!?
 #TODO difference metric here is just assumed to be strlendist
-function evaluate(pd::ProgramDerivative, o₁::AbstractString, o₂::AbstractString, i₁::Tuple{Vararg{<:String}}, i₂::Tuple{Vararg{<:String}})
+function evaluate(pd::ProgramDerivative, o₁::AbstractString, o₂::AbstractString, i₁::Tuple, i₂::Tuple)
     evaluate(pd, o₁, o₂, length.(i₁), length.(i₂))
 end
 
