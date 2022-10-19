@@ -3,7 +3,7 @@
 @testset "local neighbor search LNS test" begin
 
     params = ParamsDict(:Method => :lns,
-                        :SamplingStrategy => UniformSampling,
+                        :SamplingStrategy => [ UniformSampling(Int8) ],
                         :MaxTime => 1)
     res = bboptimize(SUTProblem(myidentity_sut, [ IntMutationOperators ]); params...)
 
@@ -17,8 +17,7 @@ end
 @testset "boundary crossing search BCS test" begin
 
     params = ParamsDict(:Method => :bcs,
-                        :SamplingStrategy => BituniformSampling,
-                        :CTS => true,
+                        :SamplingStrategy => [ BituniformSampling(Int8, true) ],
                         :MaxTime => 1)
     res = bboptimize(SUTProblem(myidentity_sut, [ IntMutationOperators ]); params...)
 
@@ -45,12 +44,12 @@ end
     string_identity_sut = SUT("string identity", (x::String) -> x)
 
     params = ParamsDict(:Method => :lns,
-                        :SamplingStrategy => ABCStringSampling(),
+                        :SamplingStrategy => [ ABCStringSampling() ],
                         :MaxTime => 1)
     res = bboptimize(SUTProblem(string_identity_sut, [ BasicStringMutationOperators ]); params...)
 
     params = ParamsDict(:Method => :bcs,
-                        :SamplingStrategy => ABCStringSampling(),
+                        :SamplingStrategy => [ ABCStringSampling() ],
                         :MaxTime => 1)
     res = bboptimize(SUTProblem(string_identity_sut, [ BasicStringMutationOperators ]); params...)
 
@@ -64,12 +63,12 @@ end
     array_append_sut = SUT("array append", (x::Vector, y::Vector) -> vcat(x, y))
 
     params = ParamsDict(:Method => :lns,
-                        :SamplingStrategy => SomeArraySampling(),
+                        :SamplingStrategy => fill(SomeArraySampling(), 2),
                         :MaxTime => 1)
     res = bboptimize(SUTProblem(array_append_sut, fill(BasicArrayMutationOperators, 2)); params...)
 
     params = ParamsDict(:Method => :bcs,
-                        :SamplingStrategy => SomeArraySampling(),
+                        :SamplingStrategy => fill(SomeArraySampling(), 2),
                         :MaxTime => 1)
     res = bboptimize(SUTProblem(array_append_sut, fill(BasicArrayMutationOperators, 2)); params...)
 

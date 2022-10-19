@@ -32,7 +32,7 @@ BlackBoxOptim.fitness(input::AbstractVector{<:Real}, ::SUTProblem) = 0.0 # fake
 
 struct BoundaryCandidateDetectionSetup
     problem::SUTProblem
-    ss::SamplingStrategy
+    ss::Vector{SamplingStrategy}
     evaluator::BlackBoxOptim.Evaluator
     bca::BoundaryCandidateArchive
 
@@ -43,11 +43,7 @@ struct BoundaryCandidateDetectionSetup
         params[:PopulationSize] = 1
         params[:TraceMode] = :silent
         evaluator = BlackBoxOptim.ProblemEvaluator(problem)
-        cts = get(params, :CTS, false)
-        # TODO change to have the instantiation happen outside in future (currently clunky cause of introduction of different input types)
-        SS = get(params, :SamplingStrategy, UniformSampling) # as default, use uniform sampling suitable
-        ss = SS isa SamplingStrategy ? SS : SS(sut(problem), cts)
-        #TODO add a check that the sampling strategy fits the input types
+        ss = get(params, :SamplingStrategy)
         BlackBoxOptim.fitness([0.0], evaluator) # initial fake result to not break BBO.
         bca = BoundaryCandidateArchive(sut(problem))
         return new(problem, ss, evaluator, bca)

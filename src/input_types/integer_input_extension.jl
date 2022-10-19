@@ -1,18 +1,20 @@
 abstract type NumericalSamplingStrategy <: SamplingStrategy{Number} end
+types(ss::NumericalSamplingStrategy) = ss.types
+
+ensuretypesupport(T::DataType, cts::Bool) = cts ? compatibletypes(T) : Set([makeconcrete(T)])
+
+nextinput(rs::NumericalSamplingStrategy) = rand(rand(types(rs)))
 
 struct UniformSampling <: NumericalSamplingStrategy
-    types::Tuple{Vararg{Set{Type}}}
+    types::Set{DataType}
 
-    UniformSampling(types, cts=false) = new(ensuretypesupport(types, Real, cts))
+    UniformSampling(type::Type{<:Number}, cts=false) = new(ensuretypesupport(type, cts))
 end
 
-nextinput(rs::UniformSampling) = rand.(rand.(types(rs)))
-nextinput(rs::UniformSampling, dim::Int64) = rand(rand(types(rs)[dim]))
-
 struct BituniformSampling <: NumericalSamplingStrategy
-    types::Tuple{Vararg{Set{Type}}}
+    types::Set{DataType}
 
-    BituniformSampling(types, cts=false) = new(ensuretypesupport(types, Real, cts))
+    BituniformSampling(type::Type{<:Number}, cts=false) = new(ensuretypesupport(type, cts))
 end
 
 maxbits(::Type{T}) where T <: Unsigned = sizeof(T) * 8
@@ -24,8 +26,3 @@ function bitlogsample(::Type{BigInt}, maxbits = 540)
     maxbig = bitlogsize(maxbits)
     rand((-maxbig):maxbig)
 end
-
-# TODO mechanism to allow for multiple inputs of different types
-nextinput(rs::BituniformSampling) = tuple(map(i -> nextinput(rs, i), eachindex(rs.types))...)
-nextinput(rs::BituniformSampling, dim::Integer) = bitlogsample(rand(types(rs)[dim]))
-nextinput(::BituniformSampling, type::Type) = bitlogsample(type)

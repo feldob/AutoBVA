@@ -24,11 +24,11 @@ end
 
 bcsut = SUT("bytecount (buggy)", (x::Integer) -> byte_count_bug(x))
 
-include("summarize_test.jl")
-include("cts_test.jl")
-include("sampling_test.jl")
-include("distances_test.jl")
-include("sut_test.jl")
-include("boundarycandidates_test.jl")
-include("nextboundary_test.jl")
+# include("summarize_test.jl")
+# include("cts_test.jl")
+# include("sampling_test.jl")
+# include("distances_test.jl")
+# include("sut_test.jl")
+# include("boundarycandidates_test.jl")
+# include("nextboundary_test.jl")
 include("bbo_test.jl")

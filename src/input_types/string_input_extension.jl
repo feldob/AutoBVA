@@ -1,6 +1,6 @@
 struct ABCStringSampling <: SamplingStrategy{String} end
 
-nextinput(::ABCStringSampling) = ((rand() < .01 ? "a" : "") * randstring('b':'b', rand(0:10)),)
+nextinput(::ABCStringSampling) = (rand() < .01 ? "a" : "") * randstring('b':'b', rand(0:10))
 
 struct StringShorteningOperator <: ReductionOperator{String} end
 function apply(::StringShorteningOperator, datum::String, times::Integer=1) #TODO have a more efficient implementation that gets smarter
