@@ -63,13 +63,13 @@ function feature_matrix(features::Vector{ClusteringFeature}, df::DataFrame, df_r
     x = zeros(sum(fs), nrow(df))
 
     #TODO df might have to be cut into chunks to make this manageable (100 or 1000 or so)
-    "calculate feature matrix..." |> print
+    "calculate feature matrix of size $(nrow(df))..." |> print
 
-    @sync for (f_idx, attribute_idx) in enumerate(collect.(attribute_idxs))
-        @async  begin
-                    res = call(features[f_idx], df, df_ref)
-                    foreach(idx -> x[attribute_idx[idx],:] = res[idx], eachindex(res))
-                end
+    for (f_idx, attribute_idx) in enumerate(collect.(attribute_idxs))
+        begin
+            res = call(features[f_idx], df, df_ref)
+            foreach(idx -> x[attribute_idx[idx],:] = res[idx], eachindex(res))
+        end
     end
     " done." |> println
 
