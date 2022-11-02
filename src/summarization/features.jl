@@ -9,17 +9,48 @@ end
 
 id(cf::ClusteringFeature) = cf.id
 nfeatures(cf::ClusteringFeature) = length(cf.ffunctions)
-call(cf::ClusteringFeature, df::DataFrame, df_ref::DataFrame=df) = map(f -> f(df, df_ref), cf.ffunctions)
+function call(cf::ClusteringFeature, df::DataFrame, df_ref::DataFrame=df)
+    x = Array{Float64}(undef, nfeatures(cf), nrow(df))
+    for (idx, f) in enumerate(cf.ffunctions)
+        x[idx, :] = f(df, df_ref)
+    end
+    return x
+end
 
 withindistance(m, df, ::Any=df) = m.(df[!, "output"], df[!, "n_output"])
 
-function uniqueness(m, vector, vector_ref)
-    if vector === vector_ref
-        uniq_pw = pairwise(m, vector)
-        return sum(uniq_pw, dims = 2)
-    else #TODO improve impl!
-        return map(v -> sum(v_ref -> m(v, v_ref), vector_ref), vector)
+function uniqueness_stable(m, vector, vector_ref)
+    "stable calculation:" |> println
+    currentperc = 0
+    "$currentperc%" |> print
+    x = Vector{Float64}(undef, length(vector))
+    for (idx, v) in enumerate(vector)
+        x[idx] = sum(pairwise(m, [v], vector_ref))
+        nextpercent = trunc(Int64, idx/length(vector)*100)
+        if nextpercent > currentperc
+            currentperc = nextpercent
+            print("\r")
+            print("$currentperc%")
+        end
     end
+    println()
+    return x
+end
+
+function uniqueness_fast(m, vector, vector_ref)
+    uniq_pw = pairwise(m, vector, vector_ref)
+    return sum(uniq_pw, dims = 2)
+end
+
+#not fastest, but memory efficient solution (more robust)
+function uniqueness(m, vector, vector_ref)
+    # only if small, go with fast solution
+    if length(vector) * length(vector_ref) > 20_000_000
+        return uniqueness_stable(m, vector, vector_ref)
+    else
+        return uniqueness_fast(m, vector, vector_ref)
+    end
+
 end
 
 uniqueness_left(m, df, df_ref::Any=df) = uniqueness(m, df[!,"output"], df_ref[!,"output"])

@@ -57,18 +57,17 @@ normalizerows(m::T) where {N <: Number, T <: AbstractMatrix{N}} = normalizecolum
 empty_clustering(df::DataFrame) = ClusteringResult(hcat(df, DataFrame(clustering = String[], cluster = Int[])), 0.0) # fake score
 #TODO more efficient solution - needs two references, or work with Ref instead!?
 function feature_matrix(features::Vector{ClusteringFeature}, df::DataFrame, df_ref::DataFrame=df)
-    fs = nfeatures.(features)
-    attribute_idxs = reduce((x,y) -> [x...,x[end][end]+1:(y+x[end][end])],fs[2:end],init=[1:fs[1]])
-
-    x = zeros(sum(fs), nrow(df))
+    x = Array{Float64}(undef, sum(nfeatures.(features)), nrow(df))
 
     #TODO df might have to be cut into chunks to make this manageable (100 or 1000 or so)
-    "calculate feature matrix of size $(nrow(df))..." |> print
+    "calculate feature matrix of size $(nrow(df))..." |> println
 
-    for (f_idx, attribute_idx) in enumerate(collect.(attribute_idxs))
+    feature_idx = 1
+    for feature in features
         begin
-            res = call(features[f_idx], df, df_ref)
-            foreach(idx -> x[attribute_idx[idx],:] = res[idx], eachindex(res))
+            "$(id(feature))" |> println
+            x[feature_idx:feature_idx+(nfeatures(feature)-1), :] = call(feature, df, df_ref)
+            feature_idx += nfeatures(feature)
         end
     end
     " done." |> println
@@ -222,8 +221,6 @@ function regular_clustering(setup::ClusteringSetup, df_o::DataFrame, df::DataFra
         return regular_clustering(setup, df_o, df_m, VG, max_cluster_size)
     end
 
-
-
     df_n = DataFrame(df)
     df_n.clustering = fill!(Vector{String}(undef, nrow(df_n)), string(VG))
 
@@ -232,7 +229,7 @@ function regular_clustering(setup::ClusteringSetup, df_o::DataFrame, df::DataFra
 
     "start clustering..." |> println
     bc, silh_score = bestclustering(setup, x_norm, x_dists)
-    "...done. best size is $(counts(bc))" |> println
+    "...done. best size is $(sort(counts(bc)))" |> println
 
     df_n.cluster = assignments(bc)
 
