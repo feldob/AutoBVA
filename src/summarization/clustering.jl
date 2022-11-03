@@ -47,12 +47,10 @@ function single_clustering(df_o::DataFrame, df::DataFrame, VG::ValidityGroup)
     return ClusteringResult(df_n, 1.0) # fake score
 end
 
-function normalizecolumns(m::T, mins=minimum(m, dims=1), maxs=maximum(m, dims=1)) where {N <: Number, T <: AbstractMatrix{N}}
+function normalizerows(m::T, mins=minimum(m, dims=2)[:,1], maxs=maximum(m, dims=2)[:,1]) where {N <: Number, T <: AbstractMatrix{N}}
     span = (maxs .- mins) .+ 1e-20
     (m .- mins) ./ span
 end
-
-normalizerows(m::T) where {N <: Number, T <: AbstractMatrix{N}} = normalizecolumns(m')'
 
 empty_clustering(df::DataFrame) = ClusteringResult(hcat(df, DataFrame(clustering = String[], cluster = Int[])), 0.0) # fake score
 
