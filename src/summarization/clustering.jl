@@ -69,21 +69,19 @@ function feature_matrix(features::Vector{ClusteringFeature}, df::DataFrame, df_r
     end
     " done." |> println
 
-    #FIXME potential normalization error further down the line, when calculating the cluster belongingness in "classify"...
-    # TODO solution would be to pass on the original extreme values here and use them in the classification calculation instead of the extremes there
-    return normalizerows(x)
+    return x
 end
 
 feature_matrix(setup::ClusteringSetup, df::DataFrame) = feature_matrix(setup.features, df)
 
 # classify according to nearest cluster center
-function regular_classify(df_n::DataFrame, df_o::DataFrame, cluster_centers, features)::DataFrame
+function regular_classify(df_n::DataFrame, df_o::DataFrame, cluster_centers, features, mins, maxs)::DataFrame
     df_s::DataFrame=nonincluded(df_n, df_o)
     df_s.clustering = fill!(Vector{String}(undef, nrow(df_s)), df_n[1,:clustering])   
 
     "classification (size overall $(nrow(df_o)), model $(nrow(df_n)), unassigned $(nrow(df_s)))):"|> println
 
-    x = feature_matrix(features, df_s, df_n)
+    x = normalizerows(feature_matrix(features, df_s, df_n), mins, maxs)
 
     df_s.cluster = Vector{Int}(undef, nrow(df_s))
     # shortest euclidean distance to center "wins" and defines the cluster per boundary candidate in df_s
@@ -154,7 +152,7 @@ function diverse_subset(s::ClusteringSetup, df::DataFrame, matrix_size::Integer)
         df_remainder = df_remainder[lastentry+1:end, :]         # remove selection from remainder
 
         df_res = vcat(df_res, df_next)                          # combine the existing and new ones
-        x_norm = feature_matrix(s, df_res)                      # calculate the diversity
+        x_norm = normalizerows(feature_matrix(s, df_res))       # calculate the diversity
         divsum = sum(x_norm, dims = 1)[1,:]                     # calculate overall diversity per entry as sum
         if nrow(df_res) > matrix_size
             lastentry = nrow(df_res) - matrix_size
@@ -220,7 +218,8 @@ function regular_clustering(setup::ClusteringSetup, df_o::DataFrame, df::DataFra
     df_n = DataFrame(df)
     df_n.clustering = fill!(Vector{String}(undef, nrow(df_n)), string(VG))
 
-    x_norm = feature_matrix(setup, df)
+    x = feature_matrix(setup, df)
+    x_norm = normalizerows(x)
     x_dists = pairwise(Euclidean(), x_norm, dims=2)
 
     "start clustering..." |> println
@@ -230,7 +229,8 @@ function regular_clustering(setup::ClusteringSetup, df_o::DataFrame, df::DataFra
     df_n.cluster = assignments(bc)
 
     if nrow(df_n) != nrow(df_o) # if its reduced, classify all points
-        df_n = regular_classify(df_n, df_o, bc.centers, setup.features)
+        x_mins, x_maxs = minimum(x, dims=2)[:,1], maximum(x, dims=2)[:,1]
+        df_n = regular_classify(df_n, df_o, bc.centers, setup.features, x_mins, x_maxs)
     end
 
     @assert nrow(df_n) == nrow(df_o)
