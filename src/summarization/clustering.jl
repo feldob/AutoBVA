@@ -55,11 +55,10 @@ end
 normalizerows(m::T) where {N <: Number, T <: AbstractMatrix{N}} = normalizecolumns(m')'
 
 empty_clustering(df::DataFrame) = ClusteringResult(hcat(df, DataFrame(clustering = String[], cluster = Int[])), 0.0) # fake score
-#TODO more efficient solution - needs two references, or work with Ref instead!?
+
 function feature_matrix(features::Vector{ClusteringFeature}, df::DataFrame, df_ref::DataFrame=df)
     x = Array{Float64}(undef, sum(nfeatures.(features)), nrow(df))
 
-    #TODO df might have to be cut into chunks to make this manageable (100 or 1000 or so)
     "calculate feature matrix of size $(nrow(df))..." |> println
 
     feature_idx = 1
@@ -84,9 +83,9 @@ function regular_classify(df_n::DataFrame, df_o::DataFrame, cluster_centers, fea
     df_s::DataFrame=nonincluded(df_n, df_o)
     df_s.clustering = fill!(Vector{String}(undef, nrow(df_s)), df_n[1,:clustering])   
 
-    "classification:"|> println
+    "classification (size overall $(nrow(df_o)), model $(nrow(df_n)), unassigned $(nrow(df_s)))):"|> println
 
-    x = feature_matrix(features, df_s, df_o)
+    x = feature_matrix(features, df_s, df_n)
 
     df_s.cluster = Vector{Int}(undef, nrow(df_s))
     # shortest euclidean distance to center "wins" and defines the cluster per boundary candidate in df_s
@@ -119,7 +118,7 @@ function bestclustering(setup::ClusteringSetup, x::AbstractMatrix{Float64}, dist
             c = counts(R) # get the cluster sizes
 
             RS[j] = R
-            fitnesses[j] = mean(silhouettes(a,c, dists))
+            fitnesses[j] = mean(silhouettes(a, c, dists))
         end
 
         winner_i = argmax(fitnesses)
@@ -206,7 +205,6 @@ function divide_by_popularity(df::DataFrame, cutoff=10_000)
     return df_multiples, df_singles, popularity
 end
 
-#TODO introduce a much simpler approach by ordering entries using lexicographic and then picking.
 #TODO unlikely, but at times, the number of multiples may be larger than MAX_CLUSTERING_SIZE, how to handle!?
 function regular_clustering(setup::ClusteringSetup, df_o::DataFrame, df::DataFrame, VG::ValidityGroup, max_cluster_size=MAX_CLUSTERING_SIZE)
 
@@ -229,7 +227,7 @@ function regular_clustering(setup::ClusteringSetup, df_o::DataFrame, df::DataFra
 
     "start clustering..." |> println
     bc, silh_score = bestclustering(setup, x_norm, x_dists)
-    "...done. best size is $(sort(counts(bc)))" |> println
+    "...done. best size is $(sort(counts(bc))) with score: $silh_score" |> println
 
     df_n.cluster = assignments(bc)
 
