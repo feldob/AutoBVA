@@ -10,20 +10,13 @@ struct SUT{T}
     argtypes::Tuple{Vararg{Type}}
     argnames::Vector{String}
 
-    function SUT(name::String, sut::Function)
-        @assert methods(sut).ms |> length == 1 "The SUT is not unique, make sure to use a unique identifier or use a lambda to pass it on."
+    function SUT(name::String, sut::Function, argtypes = (methods(sut).ms[1].sig.parameters[2:end]...,))
         @assert methods(sut).ms[1].nargs > 1 "The SUT has no arguments, and is therefore not suitable for explorative analysis."
-        @assert !haskey(SUTS, name) "You must use a unique SUT name, the name '$name' is already taken by a registered SUT."
 
         #TODO add an impl that creates a lambda expression (clone) for the sut, so that each sut is unique.
-        argtypes = (methods(sut).ms[1].sig.parameters[2:end]...,)
-        this = new{Tuple{argtypes...}}(name, sut, argtypes, argnames(sut))
-        SUTS[name] = this
-        return this
+        return new{Tuple{argtypes...}}(name, sut, argtypes, argnames(sut))
     end
 end
-
-global const SUTS = Dict{String, SUT}()
 
 name(sut::SUT) = sut.name
 sut(s::SUT) = s.sut

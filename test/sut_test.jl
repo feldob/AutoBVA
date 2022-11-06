@@ -1,7 +1,6 @@
 @testset "sut constructor tests" begin
 
     @test SUT("double", (x::Int) -> 2x) isa SUT{Tuple{Int}}
-    @test AutoBVA.SUTS["tuple"] isa SUT{Tuple{Tuple}} # Tuple can be set as input
 
     @test "name1" == SUT("name1", (x) -> true) |> AutoBVA.name # verify correct name setting and retrieval
 
@@ -36,6 +35,13 @@ end
 @testset "sut with String param" begin
 
     doublestringsut = SUT("double string", (x::String) -> x * " " * x)
+    @test doublestringsut isa SUT{Tuple{String}}
+    @test "test test"== stringified(call(doublestringsut, "test"))
+end
+
+@testset "sut with String param passed explicitly as argtyes" begin
+
+    doublestringsut = SUT("double string 2", (x) -> x * " " * x, (String,))
     @test doublestringsut isa SUT{Tuple{String}}
     @test "test test"== stringified(call(doublestringsut, "test"))
 end
