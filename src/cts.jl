@@ -24,7 +24,7 @@ compatibletypes(::Type{Int32}) = compatibletypes(Int16) ∪ compatibletypes(UInt
 compatibletypes(::Type{Int64}) = compatibletypes(Int32) ∪ compatibletypes(UInt32) ∪ Set([Int64])
 compatibletypes(::Type{Int128}) = compatibletypes(Int64) ∪ compatibletypes(UInt64) ∪ Set([Int128])
 compatibletypes(::Type{Integer}) = compatibletypes(Int128) # TODO this is now limited, as it does not consider BigInt -> change?!
-compatibletypes(::Type{BigInt}) = compatibletypes(Int128) ∪ Set([BigInt])
+compatibletypes(::Type{BigInt}) = compatibletypes(Int128) ∪ compatibletypes(UInt128) ∪ Set([BigInt])
 compatibletypes(t::Type{Union}) = Set(compatibletypes.(Base.uniontypes(t)))
 
 compatibletypes(types::Tuple) = compatibletypes.(types)
