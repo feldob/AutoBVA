@@ -8,6 +8,9 @@ abstract type ReductionOperator{T} <: MutationOperator{T} end
 
 isatomic(x::Integer) = x ≤ 1
 
+Base.typemin(::BigInt) = typemin(Int128) # special case
+Base.typemax(::BigInt) = typemax(UInt128) # special case
+
 rightdirection(::ReductionOperator{Integer}, current::Integer, next::Integer) = current > next
 edgecase(::ReductionOperator{Integer}, value::Integer) = value == typemin(value)
 withinbounds(ro::ReductionOperator{Integer}, current::Integer, next::Integer) = rightdirection(ro, current, next) && rightdirection(ro, next, typemin(current))

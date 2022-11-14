@@ -10,8 +10,8 @@ struct SUT{T}
     argtypes::Tuple{Vararg{Type}}
     argnames::Vector{String}
 
-    function SUT(name::String, sut::Function, argtypes = (methods(sut).ms[1].sig.parameters[2:end]...,))
-        @assert methods(sut).ms[1].nargs > 1 "The SUT has no arguments, and is therefore not suitable for explorative analysis."
+    function SUT(name::String, sut::Function, method=methods(sut).ms[1], argtypes = (method.sig.parameters[2:end]...,))
+        @assert method.nargs > 1 "The SUT has no arguments, and is therefore not suitable for explorative analysis."
 
         #TODO add an impl that creates a lambda expression (clone) for the sut, so that each sut is unique.
         return new{Tuple{argtypes...}}(name, sut, argtypes, argnames(sut))
