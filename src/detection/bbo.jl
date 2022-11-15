@@ -8,7 +8,7 @@ struct SUTProblem{FS} <: OptimizationProblem{FS}
     sut::SUT
     mos::Vector{Vector{MutationOperator}}
 
-    SUTProblem(name::String, sut::Function, mos) = SUTProblem(SUT(name, sut), mos)
+    SUTProblem(name::String, sut::Function, mos) = SUTProblem(SUT(sut, name), mos)
     function SUTProblem(sut::SUT, mos)
         @assert numargs(sut) == length(mos) "The mutation operator args must match the sut in number and type."
         # TODO add check that types in mos and sut match

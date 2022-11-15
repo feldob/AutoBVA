@@ -8,13 +8,14 @@ struct SUT{T}
     name::String
     sut::Function
     argtypes::Tuple{Vararg{Type}}
-    argnames::Vector{String}
 
-    function SUT(name::String, sut::Function, method=methods(sut).ms[1], argtypes = (method.sig.parameters[2:end]...,))
-        @assert method.nargs > 1 "The SUT has no arguments, and is therefore not suitable for explorative analysis."
+    function SUT(sut::Function, name::String=string(nameof(sut)), method::Method=methods(sut).ms[1])
+        argtypes = (method.sig.parameters[2:end]...,)
+        return new{Tuple{argtypes...}}(name, sut, argtypes)
+    end
 
-        #TODO add an impl that creates a lambda expression (clone) for the sut, so that each sut is unique.
-        return new{Tuple{argtypes...}}(name, sut, argtypes, argnames(sut))
+    function SUT(sut::Function, name::String=string(nameof(sut)), argtypes::Tuple = (methods(sut).ms[1].sig.parameters[2:end]...,))
+        return new{Tuple{argtypes...}}(name, sut, argtypes)
     end
 end
 
@@ -22,7 +23,7 @@ name(sut::SUT) = sut.name
 sut(s::SUT) = s.sut
 numargs(s::SUT)=length(argtypes(s))
 argtypes(s::SUT) = s.argtypes
-argnames(s::SUT) = s.argnames
+argnames(s::SUT) = argnames(sut(s))
 
 @enum OutputType valid error
 
@@ -66,5 +67,5 @@ BituniformSampling(sut::SUT, cts::Bool=false) = BituniformSampling(argtypes(sut)
 
 # section with suts that come along
 
-myidentity_sut = SUT("identity", (x::Int8) -> x)
-tuple_sut = SUT("tuple", (x::Tuple) -> 0.0)
+myidentity_sut = SUT((x::Int8) -> x)
+tuple_sut = SUT((x::Tuple) -> 0.0)

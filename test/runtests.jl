@@ -8,8 +8,7 @@ using CSV # summarize i/o
 using Combinatorics # summarize
 
 # Date (for some tests)
-datesut = SUT("Julia Date",
-                (year::Int64, month::Int64, day::Int64) -> Date(year, month, day))
+datesut = SUT((year::Int64, month::Int64, day::Int64) -> Date(year, month, day), "Julia Date")
 
 # bytecount
 function byte_count_bug(bytes::Integer, si::Bool = true)
@@ -22,7 +21,7 @@ function byte_count_bug(bytes::Integer, si::Bool = true)
     @sprintf("%.1f %sB", bytes / (unit^exp), pre)
 end
 
-bcsut = SUT("bytecount (buggy)", (x::Integer) -> byte_count_bug(x))
+bcsut = SUT((x::Integer) -> byte_count_bug(x), "bytecount (buggy)")
 
 include("summarize_test.jl")
 include("cts_test.jl")

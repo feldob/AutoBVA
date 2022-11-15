@@ -1,23 +1,20 @@
 @testset "sut constructor tests" begin
 
-    @test SUT("double", (x::Int) -> 2x) isa SUT{Tuple{Int}}
+    @test SUT((x::Int) -> 2x) isa SUT{Tuple{Int}}
 
-    @test "name1" == SUT("name1", (x) -> true) |> AutoBVA.name # verify correct name setting and retrieval
+    @test "name1" == SUT((x) -> true, "name1") |> AutoBVA.name # verify correct name setting and retrieval
 
     # verify correct output of argtypes
-    @test (Int,) == SUT("name2", (x::Int) -> true) |> argtypes
-    @test (Any,) == SUT("name3", (x) -> true) |> argtypes
-    @test (Bool, String, Any) == SUT("name4", (a::Bool, b::String, c) -> nothing) |> argtypes
+    @test (Int,) == SUT((x::Int) -> true) |> argtypes
+    @test (Any,) == SUT((x) -> true) |> argtypes
+    @test (Bool, String, Any) == SUT((a::Bool, b::String, c) -> nothing) |> argtypes
 
-    @test_throws AssertionError SUT("noargs1", () -> false) # at least one argument
-    @test_throws AssertionError SUT("noargs2", string) # system-wide unique name
-
-    @test SUT("wrapped", (x::Int) -> string(x)) isa SUT{Tuple{Int}} # use of existing method, wrapping in lambda
+    @test SUT((x::Int) -> string(x)) isa SUT{Tuple{Int}} # use of existing method, wrapping in lambda
 end
 
 @testset "sut call tests" begin
 
-    # as defined in sut.jl: myidentity_sut = SUT("myidentity", (x::Int8) -> x)
+    # as defined in sut.jl: myidentity_sut = SUT((x::Int8) -> x)
 
     @test call(myidentity_sut, Int8(1)) isa SUTOutput
     @test 1 == call(myidentity_sut, Int8(1)) |> value
@@ -34,14 +31,14 @@ end
 
 @testset "sut with String param" begin
 
-    doublestringsut = SUT("double string", (x::String) -> x * " " * x)
+    doublestringsut = SUT((x::String) -> x * " " * x, "double string")
     @test doublestringsut isa SUT{Tuple{String}}
     @test "test test"== stringified(call(doublestringsut, "test"))
 end
 
 @testset "sut with String param passed explicitly as argtyes" begin
 
-    doublestringsut = SUT("double string 2", (x) -> x * " " * x, (String,))
+    doublestringsut = SUT((x) -> x * " " * x, "double string 2", (String,))
     @test doublestringsut isa SUT{Tuple{String}}
     @test "test test"== stringified(call(doublestringsut, "test"))
 end

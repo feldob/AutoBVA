@@ -1,4 +1,4 @@
-#myidentity_sut2 = SUT("identity2", (x::Union{Int8, Bool}) -> x) # TODO union support not implemented yet
+#myidentity_sut2 = SUT((x::Union{Int8, Bool}) -> x) # TODO union support not implemented yet
 
 @testset "local neighbor search LNS test" begin
 
@@ -41,7 +41,7 @@ end
 
 @testset "string search test" begin
 
-    string_identity_sut = SUT("string identity", (x::String) -> x)
+    string_identity_sut = SUT((x::String) -> x, "string identity")
 
     params = ParamsDict(:Method => :lns,
                         :SamplingStrategy => [ ABCStringSampling() ],
@@ -60,7 +60,7 @@ end
 
 @testset "array example test" begin
 
-    array_append_sut = SUT("array append", (x::Vector, y::Vector) -> vcat(x, y))
+    array_append_sut = SUT((x::Vector, y::Vector) -> vcat(x, y), "array append")
 
     params = ParamsDict(:Method => :lns,
                         :SamplingStrategy => fill(SomeArraySampling(), 2),
