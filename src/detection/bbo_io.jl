@@ -138,7 +138,7 @@ function avoidInexactErrorWhenGrouping(df::DataFrame, argnames::AbstractVector{<
 
     for arg in vcat(argnames, argnames_n)
         if eltype(df[!,arg]) <: Integer
-            df[!,arg] = convert.(BigInt, col)
+            df[!,arg] = convert.(BigInt, df[!,arg])
         end
     end
 
