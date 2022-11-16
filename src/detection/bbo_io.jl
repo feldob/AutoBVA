@@ -137,11 +137,9 @@ function avoidInexactErrorWhenGrouping(df::DataFrame, argnames::AbstractVector{<
     argnames_n = map(x -> "n_$x", argnames)
 
     for arg in vcat(argnames, argnames_n)
-        col = df[!,arg]
-        # get all indices where there are unsigned ints
-        idxs = findall(x -> x isa Unsigned, col)
-        # in-place, substitute them by BigInts.
-        col[idxs] = convert.(BigInt, col[idxs])
+        if eltype(df[!,arg]) <: Integer
+            df[!,arg] = convert.(BigInt, col)
+        end
     end
 
     return df
