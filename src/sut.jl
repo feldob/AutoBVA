@@ -14,6 +14,11 @@ struct SUT{T}
         return new{Tuple{argtypes...}}(name, sut, argtypes)
     end
 
+    function SUT(sut::Function, method::Method=methods(sut).ms[1], name::String=string(nameof(sut)))
+        argtypes = (method.sig.parameters[2:end]...,)
+        return new{Tuple{argtypes...}}(name, sut, argtypes)
+    end
+
     function SUT(sut::Function, name::String=string(nameof(sut)), argtypes::Tuple = (methods(sut).ms[1].sig.parameters[2:end]...,))
         return new{Tuple{argtypes...}}(name, sut, argtypes)
     end
