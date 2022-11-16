@@ -19,12 +19,16 @@ compatibletypes(::Type{UInt128}) = compatibletypes(UInt64) ∪ Set([UInt128])
 
 # unsigned of smaller bitsize are compatible to signed of larger bitsize -> incorporate
 compatibletypes(::Type{Int8}) = compatibletypes(Bool) ∪ Set([Int8])
-compatibletypes(::Type{Int16}) = compatibletypes(Int8) ∪ compatibletypes(UInt8) ∪ Set([Int16])
-compatibletypes(::Type{Int32}) = compatibletypes(Int16) ∪ compatibletypes(UInt16) ∪ Set([Int32])
-compatibletypes(::Type{Int64}) = compatibletypes(Int32) ∪ compatibletypes(UInt32) ∪ Set([Int64])
-compatibletypes(::Type{Int128}) = compatibletypes(Int64) ∪ compatibletypes(UInt64) ∪ Set([Int128])
-compatibletypes(::Type{Integer}) = compatibletypes(Int128) # TODO this is now limited, as it does not consider BigInt -> change?!
-compatibletypes(::Type{BigInt}) = compatibletypes(Int128) ∪ compatibletypes(UInt128)
+compatibletypes(::Type{Int16}) = compatibletypes(Int8) ∪ Set([Int16])
+compatibletypes(::Type{Int32}) = compatibletypes(Int16) ∪ Set([Int32])
+compatibletypes(::Type{Int64}) = compatibletypes(Int32) ∪ Set([Int64])
+compatibletypes(::Type{Int128}) = compatibletypes(Int64) ∪ Set([Int128])
+
+compatibletypes(::Type{Unsigned}) = compatibletypes(UInt128)
+compatibletypes(::Type{Signed}) = compatibletypes(Int128)
+compatibletypes(::Type{BigInt}) = compatibletypes(Signed) ∪ compatibletypes(Unsigned)
+compatibletypes(::Type{Integer}) = compatibletypes(BigInt)
+
 compatibletypes(t::Type{Union}) = Set(compatibletypes.(Base.uniontypes(t)))
 
 compatibletypes(types::Tuple) = compatibletypes.(types)

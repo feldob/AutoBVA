@@ -26,3 +26,14 @@ end
         @test typeof(x) ∈ compatibletypes(Int64)
     end
 end
+
+@testset "sampling strategy vector tests" begin
+
+    samplers = SamplingStrategy[ BituniformSampling(Unsigned, true), BituniformSampling(Signed, true)]
+
+    for _ in 1:100
+        u, s = nextinput(samplers)
+        @test convert(Unsigned, u) isa Unsigned
+        @test convert(Signed, s) isa Signed
+    end
+end
