@@ -38,6 +38,7 @@ function singlefilesummary(expdir::String; wtd=false)
                 expfiles_sut = map(x -> "$(joinpath(expdir, x))", filter(x -> startswith(x, "$(sutname)_") && contains(x, "_$(time)_") && contains(x, "_$(alg)_") && !endswith(x, "_all.csv"), readdir(expdir)))
                 for expfile in expfiles_sut
                     res_frame = CSV.read(expfile, DataFrame; types = String)
+
                     res_frame.count = parse.(Int64, res_frame.count)
                     if @isdefined(df)
                         df = vcat(df, res_frame)    # append
@@ -45,8 +46,16 @@ function singlefilesummary(expdir::String; wtd=false)
                         df = res_frame              # init
                     end
 
+                    if isempty(res_frame)
+                        continue
+                    end
+
                     gr = groupby(df, setdiff(names(df), ["count"]))
                     df = combine(gr, :count => sum => :count)
+                end
+
+                if !@isdefined(df)
+                    continue
                 end
 
                 args = names(df)[1:findfirst(x -> x == "output", names(df))-1]
