@@ -1,6 +1,6 @@
 # helpfunctions
 
-argnames(f::Function) = string.(Base.method_argnames(methods(f).ms[1])[2:end])
+argnames(m::Method) = string.(Base.method_argnames(m)[2:end])
 
 # A SUT is a wrapper for a software under test, in principle any function. It requires at least one argument, and a system wide unique function identifier or be a lambda (no identifier overloading for disambiguity).
 # Futher, this implementation is limited in that it does not allow for Tuple to be an input (call would have to be refactored for that).
@@ -8,19 +8,19 @@ struct SUT{T}
     name::String
     sut::Function
     argtypes::Tuple{Vararg{Type}}
+    argnames::Vector{<:String}
 
     function SUT(sut::Function, name::String=string(nameof(sut)), method::Method=methods(sut).ms[1])
         argtypes = (method.sig.parameters[2:end]...,)
-        return new{Tuple{argtypes...}}(name, sut, argtypes)
+        return new{Tuple{argtypes...}}(name, sut, argtypes, argnames(method))
     end
 
-    function SUT(sut::Function, method::Method=methods(sut).ms[1], name::String=string(nameof(sut)))
-        argtypes = (method.sig.parameters[2:end]...,)
-        return new{Tuple{argtypes...}}(name, sut, argtypes)
-    end
+    SUT(sut::Function, method::Method=methods(sut).ms[1], name::String=string(nameof(sut))) = SUT(sut, name, method)
 
     function SUT(sut::Function, name::String=string(nameof(sut)), argtypes::Tuple = (methods(sut).ms[1].sig.parameters[2:end]...,))
-        return new{Tuple{argtypes...}}(name, sut, argtypes)
+        suitablemethods = filter(m -> length(m.sig.parameters) == length(argtypes) + 1, methods(sut))
+        @assert length(suitablemethods) > 0 "there is no method $(nameof(sut)) with signature $argtypes" # TODO extend check here on type level, not only number of args
+        return new{Tuple{argtypes...}}(name, sut, argtypes, argnames(suitablemethods[1]))
     end
 end
 
@@ -28,7 +28,7 @@ name(sut::SUT) = sut.name
 sut(s::SUT) = s.sut
 numargs(s::SUT)=length(argtypes(s))
 argtypes(s::SUT) = s.argtypes
-argnames(s::SUT) = argnames(sut(s))
+argnames(s::SUT) = s.argnames
 
 @enum OutputType valid error
 
