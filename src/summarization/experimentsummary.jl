@@ -28,12 +28,18 @@ end
 function singlefilesummary(expdir::String; wtd=false)
     expfiles = filter(x -> isfile(joinpath(expdir, x)) && endswith(x, ".csv") && x != "results.csv" && !endswith(x, "_all.csv"), readdir(expdir))
 
-    extra_underscores = count(i->(i=='_'), expfiles[1]) - 6 # 6 is the expected number
-    cut_idxs = [1,3,6] .+ extra_underscores
+    sutnames, algs, times = [], [], []
+    for expfile in expfiles
+        extra_underscores = count(i->(i=='_'), expfile) - 6 # 6 is the expected number
+        cut_idxs = [1,3,6] .+ extra_underscores
+        splitted = split(expfile, "_")
 
-    sutnames = unique(map(x -> join(split(x, "_")[1:cut_idxs[1]], '_'), expfiles))
-    algs = unique(map(x -> split(x, "_")[cut_idxs[2]], expfiles))
-    times = unique(map(x -> split(x, "_")[cut_idxs[3]], expfiles))
+        push!(sutnames, join(splitted[1:cut_idxs[1]], '_'))
+        push!(algs, splitted[cut_idxs[2]])
+        push!(times, splitted[cut_idxs[3]])
+    end
+
+    sutnames, algs, times = unique(sutnames), unique(algs), unique(times)
 
     for sutname in sutnames
         for time in times
