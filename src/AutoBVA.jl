@@ -23,8 +23,8 @@ module AutoBVA
     # distances.jl
     Strlendist, RelationalMetric, ProgramDerivative, evaluate,
 
-    # sut.jl
-    SUT, name, argtypes, call, numargs,
+    # sut.jls
+    SUT, name, argtypes, call, numargs, argnames,
     OutputType, valid, error,
     SUTOutput, datatype, outputtype, value, stringified,
     myidentity_sut, tuple_sut, # example suts

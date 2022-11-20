@@ -33,6 +33,9 @@ end
 
 τ(od::OutputDelta) = od.τ
 metric(od::OutputDelta) = od.rm
+#TODO here we directly translate to string, that should be more controlled for the actual type.
+#TODO should be possible to take that via the impl of the specific evaluation method instead
+# is there only one output, should it not be multiple?
 check(od::OutputDelta, o₁::SUTOutput, o₂::SUTOutput, i₁::Tuple, i₂::Tuple) = evaluate(metric(od),string(value(o₁)), string(value(o₂)), i₁, i₂) > τ(od)
 
 abstract type BoundarySearch end
