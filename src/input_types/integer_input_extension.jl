@@ -8,12 +8,14 @@ nextinput(rs::NumericalSamplingStrategy) = rand(rand(types(rs)))
 struct UniformSampling <: NumericalSamplingStrategy
     types::Set{DataType}
 
+    UniformSampling(::Type{Any}, cts=false) = new(ensuretypesupport(Integer, cts))
     UniformSampling(type::Type{<:Number}, cts=false) = new(ensuretypesupport(type, cts))
 end
 
 struct BituniformSampling <: NumericalSamplingStrategy
     types::Set{DataType}
 
+    BituniformSampling(::Type{Any}, cts=false) = new(ensuretypesupport(Integer, cts))
     BituniformSampling(type::Type{<:Number}, cts=false) = new(ensuretypesupport(type, cts))
 end
 
