@@ -12,7 +12,7 @@ module AutoBVA
         Statistics, # summarize.jl -> mean
         Combinatorics, # clustering.jl -> combinations
         Random, # randstring
-        CSV # summarize.jl, experimentsummary.jl
+        CSV # summarize.jl
 
     # cts.jl
     export compatibletypes,
@@ -49,9 +49,6 @@ module AutoBVA
     clusterframes, numclusters, silhouettescore, result,
     ALL_BVA_CLUSTERING_FEATURES,
 
-    # experimentsummary.jl
-    singlefilesummary,
-
     # integer_input_extension.jl
     UniformSampling, BituniformSampling,
     IntMutationOperators, IntSubtractionOperator, IntAdditionOperator,
@@ -75,7 +72,6 @@ module AutoBVA
     include("detection/nextboundary.jl")
     include("detection/bbo.jl")
 
-    include("summarization/experimentsummary.jl")
     include("summarization/summarize.jl")
     include("input_types/integer_input_extension.jl")
     include("input_types/string_input_extension.jl")
