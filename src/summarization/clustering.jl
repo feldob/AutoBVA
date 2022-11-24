@@ -162,8 +162,8 @@ function diverse_subset(s::ClusteringSetup, df::DataFrame, matrix_size::Integer)
         "size res after merging: $(nrow(df_res))" |> println
     end
 
-    "$(nrow(df_res)) == $(matrix_size)" |> println
-    @assert nrow(df_res) == matrix_size
+    "$(nrow(df_res)) ≤ $(matrix_size)" |> println
+    @assert nrow(df_res) ≤ matrix_size
     return df_res
 end
 
