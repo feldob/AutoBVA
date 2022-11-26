@@ -253,6 +253,34 @@ function clustering(setup::ClusteringSetup,
     return nrow(df_f) < 20 ? single_clustering(df_s, df_f, VG) : regular_clustering(setup, df_s, df_f, VG) # if too small for clustering, return indiv values as cluster
 end
 
+function write_silhouettescores(setup::ClusteringSetup, summary::BoundarySummary)
+    silh_file = joinpath(setup.expdir, "silhouettes.csv")
+    if !isfile(silh_file)
+        open(silh_file, "w") do io
+            write(io, "sutname,VV,VE,EE,VV_clusters,VE_clusters,EE_clusters,VV_points,VE_points,EE_points\n")
+        end
+    end
+
+    open(silh_file, "a") do io
+        scores, nclust, npoints = [], [], []
+
+        for vg in instances(ValidityGroup)
+            if contains(summary, vg)
+                clustresult = result(summary, vg)
+                push!(scores, silhouettescore(clustresult))
+                push!(nclust, numclusters(clustresult))
+                push!(npoints, nrow(clustresult.df))
+            else
+                push!(scores, missing)
+                push!(nclust, missing)
+                push!(npoints, missing)
+            end
+        end
+
+        write(io, "$(setup.sutname)," * join(scores, ',') * "," * join(nclust, ',') * "," * join(npoints, ',') * "\n")
+    end
+end
+
 function summarize(setup::ClusteringSetup; wtd::Bool=false)
     summary = BoundarySummary{ClusteringResult}()
     for VG in setup.VGs
@@ -262,6 +290,8 @@ function summarize(setup::ClusteringSetup; wtd::Bool=false)
 
     if wtd
         mkpath(setup.expdir)
+        write_silhouettescores(setup, summary)
+        #TODO write stats about quality - but here we only look at one sut - concatenate to a quality file!?
         CSV.write(joinpath(setup.expdir, setup.sutname * "_clustering.csv"), asone(summary))
     end
 

@@ -18,6 +18,7 @@ struct BoundarySummary{R<:BoundaryResult}
     BoundarySummary{R}() where R = new{R}(Dict{ValidityGroup,R}())
 end
 
+contains(cs::BoundarySummary, VG::ValidityGroup) = haskey(cs.results, VG)
 result(cs::BoundarySummary, VG::ValidityGroup) = cs.results[VG]
 add(cs::BoundarySummary, VG::ValidityGroup, result::BoundaryResult) = cs.results[VG] = result
 asone(cs::BoundarySummary) = vcat(collect(map(r -> r.df, values(cs.results)))...)
