@@ -282,6 +282,12 @@ function write_silhouettescores(setup::ClusteringSetup, summary::BoundarySummary
 end
 
 function summarize(setup::ClusteringSetup; wtd::Bool=false)
+    clust_path = joinpath(setup.expdir, setup.sutname * "_clustering.csv")
+
+    if wtd && isfile(clust_path)
+       return CSV.read(clust_path, DataFrame)
+    end
+
     summary = BoundarySummary{ClusteringResult}()
     for VG in setup.VGs
         singlesummary = clustering(setup, VG)
@@ -292,7 +298,7 @@ function summarize(setup::ClusteringSetup; wtd::Bool=false)
         mkpath(setup.expdir)
         write_silhouettescores(setup, summary)
         #TODO write stats about quality - but here we only look at one sut - concatenate to a quality file!?
-        CSV.write(joinpath(setup.expdir, setup.sutname * "_clustering.csv"), asone(summary))
+        CSV.write(clust_path, asone(summary))
     end
 
     return summary
