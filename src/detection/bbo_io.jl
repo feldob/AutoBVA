@@ -168,7 +168,7 @@ function rank_unique(df::DataFrame, sut::SUT, mos, metric::RelationalMetric, τ;
     if incl_metric
         df = append_significant_neighbor!(df, sut, mos, metric, τ; output)
         if filter
-            filter!(r -> r.metric > 0, df)
+            filter!(r -> r.metric > 0, df) # TODO this is a decision that might work fine for strlendist but not necessarily for other metrics
         end
     end
 

@@ -53,15 +53,28 @@ function uniqueness(m, vector, vector_ref)
 
 end
 
+# TODO explain when datapoint too small, calculate the single point distance.
+function overlap(a::AbstractString, b::AbstractString)
+    if length(a) < 2 || length(b) < 2
+        return StringDistances.Overlap(1)(a,b)
+    end
+
+    return StringDistances.Overlap(2)(a,b)
+end
+
+function nmd(a::AbstractString, b::AbstractString)
+    length(a) < 2 || length(b) < 2 ? NMD(1)(a,b) : NMD(2)(a,b)
+end
+
 uniqueness_left(m, df, df_ref::Any=df) = uniqueness(m, df[!,"output"], df_ref[!,"output"])
 uniqueness_right(m, df, df_ref::Any=df) = uniqueness(m, df[!,"n_output"], df_ref[!,"n_output"])
 
 sl_d = ClusteringFeature("sl_d", Strlendist(), Function[withindistance])
-jc_d = ClusteringFeature("jc_d",StringDistances.Overlap(2), Function[withindistance])
-lv_d = ClusteringFeature("lv_d",NMD(2), Function[withindistance])
+jc_d = ClusteringFeature("jc_d",overlap, Function[withindistance])
+lv_d = ClusteringFeature("lv_d",nmd, Function[withindistance])
 
 sl_u = ClusteringFeature("sl_u", Strlendist(), Function[uniqueness_left, uniqueness_right])
-jc_u = ClusteringFeature("jc_u", StringDistances.Overlap(2), Function[uniqueness_left, uniqueness_right])
-lv_u = ClusteringFeature("lv_u", NMD(2), Function[uniqueness_left, uniqueness_right])
+jc_u = ClusteringFeature("jc_u", overlap, Function[uniqueness_left, uniqueness_right])
+lv_u = ClusteringFeature("lv_u", nmd, Function[uniqueness_left, uniqueness_right])
 
 global const ALL_BVA_CLUSTERING_FEATURES = [ sl_d, jc_d, lv_d, sl_u, jc_u, lv_u ]

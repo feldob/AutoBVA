@@ -8,11 +8,10 @@ include("features.jl")
 
 abstract type BoundaryCandidateSummarization end
 
-# TODO this is a fix that handles missing entries for all outputs. OBS consider handling this differently onwards, as missing is not the same as "".
 function loadsummary(path)
     df = CSV.read(path, DataFrame; types = String)
     df.output = map(r -> ismissing(r.output) ? "" : r.output, eachrow(df))
-    df.n_output = map(r -> ismissing(r.n_output) ? "" : r.output, eachrow(df))
+    df.n_output = map(r -> ismissing(r.n_output) ? "" : r.n_output, eachrow(df))
     return df
 end
 

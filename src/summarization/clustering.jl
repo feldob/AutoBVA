@@ -120,6 +120,7 @@ function bestclustering(setup::ClusteringSetup, x::AbstractMatrix{Float64}, dist
         winner_i = argmax(fitnesses)
         best_RS[i-1] = RS[winner_i]
         best_fitnesses[i-1] = fitnesses[winner_i]
+        "best silhouette score: $(fitnesses[winner_i])" |> println
      end
 
      winner_overall = winnerselect(best_RS, best_fitnesses)
