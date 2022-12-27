@@ -97,7 +97,7 @@ function bestclustering(setup::ClusteringSetup, x::AbstractMatrix{Float64}, dist
 
     winnerselect(m,f) = (map(x -> x ≥ maximum(f) * setup.qualvsdiv, f) |> findlast)
 
-    cl_sizes = 2:16 # reasonable cluster size range
+    cl_sizes = 2:min(size(x)[2], 16) # reasonable cluster size range
     best_RS = Vector(undef, length(cl_sizes))
     best_fitnesses = Vector{Float64}(undef, length(cl_sizes))
 
@@ -251,7 +251,7 @@ function clustering(setup::ClusteringSetup,
 
     df_f = reduce_to_shortest_entries_per_same_output(df_s)
 
-    return nrow(df_f) < 20 ? single_clustering(df_s, df_f, VG) : regular_clustering(setup, df_s, df_f, VG) # if too small for clustering, return indiv values as cluster
+    return nrow(df_f) < 2 ? single_clustering(df_s, df_f, VG) : regular_clustering(setup, df_s, df_f, VG) # if too small for clustering, return indiv values as cluster
 end
 
 function write_silhouettescores(setup::ClusteringSetup, summary::BoundarySummary)
