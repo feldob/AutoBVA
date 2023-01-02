@@ -62,19 +62,15 @@ function overlap(a::AbstractString, b::AbstractString)
     return StringDistances.Overlap(2)(a,b)
 end
 
-function lvs(a::AbstractString, b::AbstractString)
-    length(a) < 2 || length(b) < 2 ? Levenshtein()(1)(a,b) : Levenshtein()(2)(a,b)
-end
-
 uniqueness_left(m, df, df_ref::Any=df) = uniqueness(m, df[!,"output"], df_ref[!,"output"])
 uniqueness_right(m, df, df_ref::Any=df) = uniqueness(m, df[!,"n_output"], df_ref[!,"n_output"])
 
 sl_d = ClusteringFeature("sl_d", Strlendist(), Function[withindistance])
 jc_d = ClusteringFeature("jc_d",overlap, Function[withindistance])
-lv_d = ClusteringFeature("lv_d",lvs, Function[withindistance])
+lv_d = ClusteringFeature("lv_d",Levenshtein(), Function[withindistance])
 
 sl_u = ClusteringFeature("sl_u", Strlendist(), Function[uniqueness_left, uniqueness_right])
 jc_u = ClusteringFeature("jc_u", overlap, Function[uniqueness_left, uniqueness_right])
-lv_u = ClusteringFeature("lv_u", lvs, Function[uniqueness_left, uniqueness_right])
+lv_u = ClusteringFeature("lv_u", Levenshtein(), Function[uniqueness_left, uniqueness_right])
 
 global const ALL_BVA_CLUSTERING_FEATURES = [ sl_d, jc_d, lv_d, sl_u, jc_u, lv_u ]

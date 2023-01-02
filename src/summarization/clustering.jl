@@ -251,7 +251,12 @@ function clustering(setup::ClusteringSetup,
 
     df_f = reduce_to_shortest_entries_per_same_output(df_s)
 
-    return nrow(df_f) < 2 ? single_clustering(df_s, df_f, VG) : regular_clustering(setup, df_s, df_f, VG) # if too small for clustering, return indiv values as cluster
+    classification_threshold = 2
+    if nrow(df_f) < .01 * nrow(df_s)    # in case the results can be 1) reduced substantially clustering might not be necessary if SUT has only a manageable number of possible output combinations
+        classification_threshold = 20
+    end
+
+    return nrow(df_f) < classification_threshold ? single_clustering(df_s, df_f, VG) : regular_clustering(setup, df_s, df_f, VG) # if too small for clustering, return indiv values as cluster
 end
 
 function write_silhouettescores(setup::ClusteringSetup, summary::BoundarySummary)
@@ -285,7 +290,7 @@ end
 function summarize(setup::ClusteringSetup; wtd::Bool=false)
     clust_path = joinpath(setup.expdir, setup.sutname * "_clustering.csv")
 
-    if wtd && isfile(clust_path)
+    if wtd && isfile(clust_path) #TODO this is an inconsistency, that returns a dataframe, while the output further below is a BoundarySummary. This only happens of the clustering file already exists (to safe time when processing large batches), but should still be streamlined.
        return CSV.read(clust_path, DataFrame)
     end
 
