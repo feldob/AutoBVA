@@ -80,7 +80,7 @@ function next_recursive(bs::NextBoundary,
 
         if outofbounds || stopcondition
             atom = isatomic(times)
-            if stopcondition && atom # recursive stop criterion, TODO generalize for other datatypes, e.g. floats (where the min distance may be lower than "one")
+            if stopcondition && atom # recursive stop criterion
                 #"successfully converged!: $(incumbent[dim])" |> println
                 return incumbent
             end

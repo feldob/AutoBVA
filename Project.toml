@@ -1,7 +1,7 @@
 name = "AutoBVA"
 uuid = "4af5b277-7cae-4348-aa33-ce831b548951"
 authors = ["Felix Dobslaw <felix.dobslaw@miun.se>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 BlackBoxOptim = "a134a8b2-14d6-55f6-9291-3336d3ab0209"
