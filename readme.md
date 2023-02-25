@@ -1,7 +1,7 @@
 AutoBVA tool
 ============
 
-The Automated Boundary Value Analysis (AutoBVA) tool implements an automatic detection and summarization of boundary candidates for software as presented in [this paper](https://arxiv.org/abs/2207.09065). The experiments and results from the paper can be found in [here](https://github.com/feldob/AutoBVA).
+The Automated Boundary Value Analysis (AutoBVA) tool implements an automatic detection and summarization of boundary candidates for software as presented in [this paper](https://arxiv.org/abs/2207.09065). The experiments and results from the paper can be found in [here](https://github.com/feldob/AutoBDPaper).
 
 AutoBVA is work-in-progress and changes to the API are expected. If you are interested in using, contributing, or learning about AutoBVA, we are happy to discuss - feel free to reach out (find contact details in linked paper above).
 
