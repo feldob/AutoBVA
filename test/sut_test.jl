@@ -42,3 +42,23 @@ end
     @test doublestringsut isa SUT{Tuple{String}}
     @test "test test"== stringified(call(doublestringsut, "test"))
 end
+
+@testset "inexacterror error bug" begin
+    function sut_solidcircle(args_vec::AbstractVector{<:Any})
+        x, y = args_vec[1], args_vec[2]
+        distance = sqrt((x - 0)^2 + (y - 0)^2)
+        if x == 0 && y == 0
+            throw(DomainError("The point should not be at the origin (0, 0)"))
+        elseif distance <= 80
+            return "in"
+        else
+            return "out"
+        end
+    end
+
+    sut_solid_circle(x::Integer, y::Integer) = sut_solidcircle(Any[x, y])
+    circlesolidsut = SUT((x::Integer, y::Integer) -> sut_solid_circle(x,y), "circle solid")
+
+    @test sut_solid_circle(-1, 1) isa String
+    @test sut_solid_circle(-1, 0x8b46a79b22af7567) isa String
+end
