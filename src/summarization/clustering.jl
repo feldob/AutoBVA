@@ -111,10 +111,10 @@ function bestclustering(setup::ClusteringSetup, x::AbstractMatrix{Float64}, dist
             R = kmeans(x, i; maxiter=200)
 
             a = assignments(R) # get the assignments of points to clusters
-            c = counts(R) # get the cluster sizes
+            #c = counts(R) # get the cluster sizes
 
             RS[j] = R
-            fitnesses[j] = mean(silhouettes(a, c, dists))
+            fitnesses[j] = mean(silhouettes(a, dists))
         end
 
         winner_i = argmax(fitnesses)
